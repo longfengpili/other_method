@@ -7,7 +7,7 @@
 # -*- coding:utf-8 -*-
 @github: https://github.com/longfengpili
 @Date: 2019-05-06 16:12:41
-@LastEditTime: 2019-05-06 16:52:31
+@LastEditTime: 2019-05-06 16:56:24
 '''
 import os,sys
 import random
@@ -84,5 +84,6 @@ class adbapi():
 if __name__ == "__main__":
     adbapi = adbapi()
     filename = sys.argv[1]
+    # print(filename)
     adbapi.pull_screenshot(filename=filename)
     
