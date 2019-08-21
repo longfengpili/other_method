@@ -13,22 +13,31 @@ pip install -r requirements.txt
 ```
 pip install superset
 ```
-5. 创建管理帐户
+5. 初始化数据库
 ```
+cd ./superset/bin/ #目录中
+pip install sqlalchemy==1.2.18
+[python] superset db upgrade
+```
+6. 创建管理帐户
+```windows
+[python]  superset fab create-admin
+```
+```Linux
 $ export FLASK_APP=superset
 flask fab create-admin
 ```
-6. 加载例子数据  
+7. 加载例子数据  
 ```
-superset load_examples
+[python] superset load_examples
 ```
-7. 创建角色和权限
+8. 创建角色和权限
 ```
-superset init
+[python] superset init
 ```
-8. 开启superset
+9. 开启superset
 ```
-superset run -p 8080 --with-threads --reload --debugger
+[python] superset run -p 8080 --with-threads --reload --debugger
 ```
 # 三方python包及连接url前缀
 
