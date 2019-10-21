@@ -230,3 +230,16 @@ layers\arc-deckgl\layers\geojson-deckgl\layers\grid-deckgl\layers\hex-deckgl\lay
 ```
 set TMPDIR=d:\tmp
 ```
+
+## Error8
++ 不能 export dashboards
++ 解决方案
+    ```
+    @action('mulexport', __('Export'), __('Export dashboards?'), 'fa-database')
+    def mulexport(self, items):
+        if not isinstance(items, list):
+            items = [items]
+        ids = ''.join('&id={}'.format(d.id) for d in items)
+        return redirect(
+            '/dashboard/export_dashboards_form?action=go&{}'.format(ids[1:]))
+    ```
