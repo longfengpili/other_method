@@ -1,5 +1,13 @@
 # 官方教程
 [官方教程](https://superset.incubator.apache.org/)
+## 方法1（docker）
+```
+docker run -d --name superset -p 8088:8088 amancevice/superset
+docker exec -it superset superset db upgrade
+docker exec -it superset load_examples
+docker exec -it superset superset-init
+```
+## 方法2(environment)：
 1. 支持3.6版本以上的python（建议在新的虚拟环境中操作）  
 2. 升级安装工具  
 ```
@@ -39,6 +47,8 @@ flask fab create-admin
 ```
 [python] superset run -p 8080 --with-threads --reload --debugger
 ```
+
+
 # 三方python包及连接url前缀
 
 |Database|Package|SQLAlchemy URI prefix|
