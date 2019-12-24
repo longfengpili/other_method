@@ -1,7 +1,7 @@
 '''
 @Author: longfengpili
 @Date: 2019-11-11 14:57:05
-@LastEditTime: 2019-11-11 18:29:55
+@LastEditTime: 2019-12-11 20:05:41
 @github: https://github.com/longfengpili
 '''
 #!/usr/bin/env python3
@@ -13,11 +13,11 @@ import sys
 
 import logging
 from logging import config
-config.fileConfig('parselog.conf')
+config.fileConfig('tutoriallog.conf')
 excel_logger = logging.getLogger('excel')
 
 
-class ReadExcel(object):
+class ReadDataFromExcel(object):
 
     def __init__(self, filepath):
         self.filepath = filepath

@@ -20,7 +20,7 @@ class WriteDataToExcel(object):
 	wdtexcel = WriteDataToExcel('./test.xlsx')
 	wdtexcel.write_sheets(datas)
 	wdtexcel.set_sheet_formula_conditional('test2', 'a1:c100', '=$b1="b"')
-	wdtexcel._close()
+	wdtexcel.close()
 	'''
 
 	def __init__(self, filepath):
@@ -37,9 +37,38 @@ class WriteDataToExcel(object):
 			sheet = self.add_sheet(sheetname)
 		return sheet
 
-	def _close(self):
+	def close(self):
 		self.wb.close()
 
+	def num_to_col(self, num):
+		if num <= 0: return ''
+		col = []
+		s = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+		a, b = divmod(num, 26)
+		col.insert(0, s[b - 1])
+		if b == 0: a -= 1
+		if a >= 26:
+			return self.num_to_col(a)
+		elif a >= 1:
+			col.insert(0, s[a - 1])
+		return ''.join(col)
+
+	def convert_cell(self, cell):
+		if isinstance(cell, int): return f"{self.num_to_col(cell)}1"
+		if isinstance(cell, str): return cell
+		if isinstance(cell, list) or isinstance(cell, tuple):
+			if len(cell) == 2:
+				first_row, first_col = cell
+				cell = f"{self.num_to_col(first_row)}{first_col}"
+			elif len(cell) == 4:
+				first_row, first_col, last_row, last_col = cell
+				cell = f"{self.num_to_col(first_row)}{first_col}:{self.num_to_col(last_row)}{last_col}"
+			else:
+				raise ValueError(f"{cell} is not a valid, length must be 2 or 4 !")
+			
+			return cell
+		else:
+			raise ValueError(f"{cell} must be str or int or list!")
 
 	def set_coverformat(self,font_size=9, font_color='#000000', bordernum=1, font_name='微软雅黑'):
 		'''
@@ -75,9 +104,10 @@ class WriteDataToExcel(object):
 		'''
 		设置指定单元格的宽度
 		:param sheetname: sheet名称
-		:param rangecell: 单元格范围,例如'A1:A5',单个单元格就是'A1:A1'
+		:param rangecell: 单元格范围,例如'A1:A5', [1, 1, 1, 5], (1, 1, 1, 5)
 		:param width: 宽度
 		'''
+		rangecell = self.convert_cell(rangecell)
 		sheet = self.get_sheet(sheetname)
 		sheet.set_column(rangecell, width)
 
@@ -95,10 +125,11 @@ class WriteDataToExcel(object):
 		'''
 		编辑指定sheet下的单元格
 		:param sheetname: sheet名称
-		:param cell: 单元格
+		:param cell: 单元格 'A1', [1, 1]
 		:param data: 写入数据
 		:param cellformat: 单元格样式
 		'''
+		cell = self.convert_cell(cell)
 		if not cellformat:
 			cellformat = self.set_cellformat()
 
@@ -109,10 +140,11 @@ class WriteDataToExcel(object):
 		'''
 		合并单元格并写入数据
 		:param sheetname: sheet名称
-		:param rangecell: 合并单元格范围，例如'D1:D7'
+		:param rangecell: 合并单元格范围,例如'A1:A5', [1, 1, 1, 5], (1, 1, 1, 5)
 		:param data: 写入数据信息
 		:param format: 单元格样式
 		'''
+		rangecell = self.convert_cell(rangecell)
 		if not cellformat:
 			cellformat = self.set_cellformat()
 
@@ -143,15 +175,18 @@ class WriteDataToExcel(object):
 				data = datas.get(sheetname)[1:]
 				self.write_sheet(sheetname, header, data, cellformat)
 
-	def set_sheet_formula_conditional(self, sheetname, rangecell, criteria):
+	def set_sheet_formula_conditional(self, sheetname, rangecell, criteria, bg_color=None):
 		'''
 		条件格式
 		:param sheetname: sheet名称
-		:param rangecell: 单元格范围，例如'A1:D7'
+		:param rangecell: 单元格范围,例如'A1:A5', [1, 1, 1, 5], (1, 1, 1, 5)
 		:param criteria: 公式， 例如'=$f1="well"'
+		:param bg_color: 颜色
 		'''
+		rangecell = self.convert_cell(rangecell)
 		sheet = self.get_sheet(sheetname)
-		wb_format = self.wb.add_format({'bg_color': '#FFC7CE'})
+		bg_color = bg_color if bg_color else '#ffb728'
+		wb_format = self.wb.add_format({'bg_color': bg_color})
 		sheet.conditional_format(rangecell.upper(), {
 	        'type': 'formula',
 	        'criteria': criteria,
