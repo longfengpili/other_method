@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-05-10 15:42:06
+# @Last Modified time: 2020-05-10 17:01:11
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -169,7 +169,7 @@ class DeepShare(object):
                 goods_id, goods_type = result['href'].split('/')[2], result['href'].split('/')[3]
                 goods_data['goods_id'] = goods_id
                 goods_data['goods_type'] = int(goods_type) if goods_type else 6
-                goods_data = json.dumps(goods_data)
+                # goods_data = json.dumps(goods_data)
                 goods_id_all[title] = goods_data
             except:
                 dslogger.error(result)
@@ -192,6 +192,7 @@ class DeepShare(object):
         Returns:
             [dict] -- [课程信息]
         '''
+        data = json.dumps(data)
         params = {'app_id': f'{self.app_id}'}
         req = None
         try:
@@ -235,12 +236,12 @@ class DeepShare(object):
                 selection_info = [course.get(key) for key in selection]
                 if selection_info:
                     course = dict(zip(selection, selection_info))
+                    course['goods_id'] = data.get('goods_id')
+                    course['goods_type'] = data.get('goods_type')
                     self.courseslist.append(course)
             if last_id:
-                data = json.loads(data)
                 data['last_id'] = last_id
                 data['order_type'] = 0
-                data = json.dumps(data)
                 return self.get_courseslist(main_api, headers, data)
         if self.courseslist:
             dslogger.info(f"This Good have {len(self.courseslist)} courses!")
@@ -266,9 +267,11 @@ class DeepShare(object):
         data = {}
         data['goods_id'] = course.get('resource_id')
         data['goods_type'] = course.get('resource_type')
-        data = json.dumps(data)
+        data['from_id'] = course.get('goods_id')
+        data['type'] = course.get('goods_type')
         req = self.get_info_from_api(page_api, headers, data)
         course_info = req.get('data')
+        # print(course_info)
         return course_info
 
     def download_video(self, course_info, headers_video, dirpath, title):
@@ -347,6 +350,7 @@ class DeepShare(object):
         content = course_info.get('content')
         with open(f'{dirpath}/{title}.html', 'w', encoding='utf-8') as f:
             f.write(content)
+        dslogger.info(f"网页下载完成！")
 
     def download_course(self, page_api, headers, headers_video, course, dirpath):
         download_status = 'downloaded'
@@ -375,6 +379,7 @@ if __name__ == "__main__":
         '【随到随学】吴恩达《机器学习》作业班', '【随到随学】李航《统计学习方法》书训练营',
         '【随到随学】PyTorch框架班', '【随到随学】李飞飞斯坦福CS231n计算机视觉课',
         '【随到随学】斯坦福CS224n自然语言处理课训练营', '【随到随学】《深度学习》花书训练营',
+        '【随到随学】AI大赛实战训练营',
     ]
     for good in no_download:
         goods_id_all.pop(good) #删除已经下载的内容
