@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-05-10 14:18:50
+# @Last Modified time: 2020-05-10 14:32:03
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -28,8 +28,8 @@ log_colors_config = {
     # 'DEBUG': 'cyan',
     # 'INFO': 'yellow',
     'WARNING': 'red',
-    'ERROR': 'red, bg_white',
-    'CRITICAL': 'red, bg_white',
+    'ERROR': 'red',
+    'CRITICAL': 'red',
 }
 formatter = colorlog.ColoredFormatter(
             '%(asctime)s - %(name)s - %(levelname)s - %(filename)s - %(lineno)d - %(log_color)s%(message)s',
