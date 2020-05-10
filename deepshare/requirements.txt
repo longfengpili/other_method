@@ -1,0 +1,3 @@
+pycryptodome
+cryptography
+m3u8
