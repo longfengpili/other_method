@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-05-10 10:03:45
+# @Last Modified time: 2020-05-10 10:17:20
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -323,7 +323,7 @@ class DeepShare(object):
                     f.flush()
         if segments:
             et = time.time()
-            dslogger.info(f"下载{title}完成,用时{et-st}秒")
+            dslogger.info(f"视频下载完成,用时{et-st:.2f}秒")
         
     def save_description(self, course_info, dirpath, title):
         content = course_info.get('content')
