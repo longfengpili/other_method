@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-05-10 09:42:38
+# @Last Modified time: 2020-05-10 10:03:45
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -21,6 +21,7 @@ import sys
 import base64
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from tqdm import tqdm
 
 import logging
 logging.basicConfig(level=logging.INFO, 
@@ -226,7 +227,7 @@ class DeepShare(object):
                 data = json.dumps(data)
                 return self.get_courseslist(main_api, headers, data)
 
-        dslogger.info(f"this good have {len(self.courseslist)} courses!")
+        dslogger.info(f"This good have {len(self.courseslist)} courses!")
         return self.courseslist
     
 
@@ -299,8 +300,8 @@ class DeepShare(object):
             dslogger.info(f"{title}\n{all_content}")
             return 
 
-        for ix, segment in enumerate(segments):
-            # dslogger.info(f"{ix}{segment}")
+        for segment in tqdm(segments, ncols=80):
+            # dslogger.info(f"{segment}")
             try:
                 key_method = segment.get('key').get('method')
                 key_url = segment.get('key').get('uri')
