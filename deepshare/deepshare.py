@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-05-10 10:17:20
+# @Last Modified time: 2020-05-10 11:04:27
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -23,10 +23,24 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from tqdm import tqdm
 
+import colorlog
+log_colors_config = {
+    # 'DEBUG': 'cyan',
+    # 'INFO': 'yellow',
+    'WARNING': 'red',
+    'ERROR': 'red, bg_white',
+    'CRITICAL': 'red, bg_white',
+}
+formatter = colorlog.ColoredFormatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(filename)s - %(lineno)d - %(log_color)s%(message)s',
+            log_colors=log_colors_config)
+
 import logging
-logging.basicConfig(level=logging.INFO, 
-    format='%(asctime)s - %(name)s - %(levelname)s - %(filename)s - %(lineno)d - %(message)s')
+handler = logging.StreamHandler()
+handler.setFormatter(formatter)
 dslogger = logging.getLogger('deepshare')
+dslogger.addHandler(handler)
+dslogger.setLevel(logging.INFO)
 
 class GetCooikiesFromChrome(object):
     '''[summary]
@@ -125,6 +139,8 @@ class DeepShare(object):
         '''
         get_cookies = GetCooikiesFromChrome()
         cookie = get_cookies.get('ai.deepshare.net')
+        if not cookie:
+            dslogger.warning('please login')
         headers['Cookie'] = cookie
         # dslogger.info(headers)
         return headers
@@ -226,8 +242,10 @@ class DeepShare(object):
                 data['order_type'] = 0
                 data = json.dumps(data)
                 return self.get_courseslist(main_api, headers, data)
-
-        dslogger.info(f"This good have {len(self.courseslist)} courses!")
+        if self.courseslist:
+            dslogger.info(f"This good have {len(self.courseslist)} courses!")
+        else:
+            dslogger.warning(f"{req}")
         return self.courseslist
     
 
