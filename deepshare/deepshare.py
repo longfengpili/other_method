@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-05-10 14:32:03
+# @Last Modified time: 2020-05-10 15:39:35
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -243,7 +243,7 @@ class DeepShare(object):
                 data = json.dumps(data)
                 return self.get_courseslist(main_api, headers, data)
         if self.courseslist:
-            dslogger.info(f"This good have {len(self.courseslist)} courses!")
+            dslogger.info(f"This Good have {len(self.courseslist)} courses!")
         else:
             dslogger.warning(f"{req}")
         return self.courseslist
@@ -268,6 +268,8 @@ class DeepShare(object):
         data['goods_type'] = course.get('resource_type')
         data = json.dumps(data)
         req = self.get_info_from_api(page_api, headers, data)
+        with open('./test.csv', 'w', encoding='utf-8') as f:
+            f.write(json.dumps(req))
         course_info = req.get('data')
         return course_info
 
@@ -349,23 +351,36 @@ class DeepShare(object):
             f.write(content)
 
     def download_course(self, page_api, headers, headers_video, course, dirpath):
+        download_status = 'downloaded'
         course_info = self.get_course_info(page_api, headers, course)
         if course_info:
             try:
                 title = course_info.get('title').replace('|', ',').replace(' ','').replace('/','')
                 if f'{title}.html' not in self.get_videoslist_from_local(dirpath):
-                    dslogger.info(f'【下载】{title}')
                     self.download_video(course_info, headers_video, dirpath, title)
                     time.sleep(1)
                     self.save_description(course_info, dirpath, title)
+                    download_status = 'current'
             except:
-                dslogger.error(course_info)
+                dslogger.error(f"course_main: {course}, course_page: {course_info}")
+                download_status = 'error'
+        return download_status
 
 
 if __name__ == "__main__":
     ds = DeepShare(app_id)
     headers = ds.create_headers(headers)
     goods_id_all = ds.get_goods_id(goods_url, headers_agent)
+    no_download = [
+        '【随到随学】人工智能数学基础训练营', '【重磅升级】Python基础+数据科学入门训练营',
+        '【随到随学】《机器学习》西瓜书训练营', '【随到随学】面试刷题+算法强化训练营',
+        '【随到随学】吴恩达《机器学习》作业班', '【随到随学】李航《统计学习方法》书训练营',
+        '【随到随学】PyTorch框架班', '【随到随学】李飞飞斯坦福CS231n计算机视觉课',
+        '【随到随学】斯坦福CS224n自然语言处理课训练营', '【随到随学】《深度学习》花书训练营',
+    ]
+    for good in no_download:
+        goods_id_all.pop(good) #删除已经下载的内容
+
     for title, data in goods_id_all.items():
         dslogger.info(f"开始下载【{title}】")
         dirpath = os.path.join('f:/深度之眼/', title)
@@ -378,8 +393,16 @@ if __name__ == "__main__":
 
         ds.courseslist = None #每次重置
         courseslist = ds.get_courseslist(main_api, headers, data)
+        downloaded = 0
+        current = 0
         for course in courseslist:
-            ds.download_course(page_api, headers, headers_video, course, dirpath)
+            dslogger.info(f'【下载】{course.get("title")}')
+            download_status = ds.download_course(page_api, headers, headers_video, course, dirpath)
+            if download_status == 'downloaded':
+                downloaded += 1
+            elif download_status == 'current' and current == 0:
+                dslogger.info(f"This Good downloaded {downloaded} courses !")
+                current += 1
         
         # break
 
