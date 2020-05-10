@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-05-10 11:04:27
+# @Last Modified time: 2020-05-10 14:18:50
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -381,7 +381,7 @@ if __name__ == "__main__":
         for course in courseslist:
             ds.download_course(page_api, headers, headers_video, course, dirpath)
         
-        break
+        # break
 
     # os.system('shutdown -s -t 60')
 
