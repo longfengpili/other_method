@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-05-10 17:01:11
+# @Last Modified time: 2020-05-10 17:13:48
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -25,7 +25,7 @@ from tqdm import tqdm
 
 import colorlog
 log_colors_config = {
-    # 'DEBUG': 'cyan',
+    'DEBUG': 'cyan',
     # 'INFO': 'yellow',
     'WARNING': 'red',
     'ERROR': 'red',
@@ -40,7 +40,7 @@ handler = logging.StreamHandler()
 handler.setFormatter(formatter)
 dslogger = logging.getLogger('deepshare')
 dslogger.addHandler(handler)
-dslogger.setLevel(logging.INFO)
+dslogger.setLevel(logging.DEBUG)
 
 class GetCooikiesFromChrome(object):
     '''[summary]
@@ -344,13 +344,13 @@ class DeepShare(object):
                     f.flush()
         if segments:
             et = time.time()
-            dslogger.info(f"视频下载完成,用时{et-st:.2f}秒")
+            dslogger.debug(f">>>>>>视频<<<<<<, 用时{et-st:.2f}秒")
         
     def save_description(self, course_info, dirpath, title):
-        content = course_info.get('content')
+        content = course_info.get('content', '')
         with open(f'{dirpath}/{title}.html', 'w', encoding='utf-8') as f:
             f.write(content)
-        dslogger.info(f"网页下载完成！")
+        dslogger.debug(f">>>>>>网页<<<<<<")
 
     def download_course(self, page_api, headers, headers_video, course, dirpath):
         download_status = 'downloaded'
@@ -396,16 +396,11 @@ if __name__ == "__main__":
 
         ds.courseslist = None #每次重置
         courseslist = ds.get_courseslist(main_api, headers, data)
-        downloaded = 0
-        current = 0
-        for course in courseslist:
-            dslogger.info(f'【下载】{course.get("title")}')
+        num = len(courseslist)
+        for ix, course in enumerate(courseslist):
+            dslogger.info(f'【下载({ix}/{num})】{course.get("title")}')
             download_status = ds.download_course(page_api, headers, headers_video, course, dirpath)
-            if download_status == 'downloaded':
-                downloaded += 1
-            elif download_status == 'current' and current == 0:
-                dslogger.info(f"This Good downloaded {downloaded} courses !")
-                current += 1
+   
         
         # break
 
