@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-05-10 15:39:35
+# @Last Modified time: 2020-05-10 15:42:06
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -268,8 +268,6 @@ class DeepShare(object):
         data['goods_type'] = course.get('resource_type')
         data = json.dumps(data)
         req = self.get_info_from_api(page_api, headers, data)
-        with open('./test.csv', 'w', encoding='utf-8') as f:
-            f.write(json.dumps(req))
         course_info = req.get('data')
         return course_info
 
