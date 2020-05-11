@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-05-10 17:13:48
+# @Last Modified time: 2020-05-11 11:56:24
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -374,12 +374,12 @@ if __name__ == "__main__":
     headers = ds.create_headers(headers)
     goods_id_all = ds.get_goods_id(goods_url, headers_agent)
     no_download = [
-        '【随到随学】人工智能数学基础训练营', '【重磅升级】Python基础+数据科学入门训练营',
-        '【随到随学】《机器学习》西瓜书训练营', '【随到随学】面试刷题+算法强化训练营',
-        '【随到随学】吴恩达《机器学习》作业班', '【随到随学】李航《统计学习方法》书训练营',
-        '【随到随学】PyTorch框架班', '【随到随学】李飞飞斯坦福CS231n计算机视觉课',
-        '【随到随学】斯坦福CS224n自然语言处理课训练营', '【随到随学】《深度学习》花书训练营',
-        '【随到随学】AI大赛实战训练营',
+        # '【随到随学】人工智能数学基础训练营', '【重磅升级】Python基础+数据科学入门训练营',
+        # '【随到随学】《机器学习》西瓜书训练营', '【随到随学】面试刷题+算法强化训练营',
+        # '【随到随学】吴恩达《机器学习》作业班', '【随到随学】李航《统计学习方法》书训练营',
+        # '【随到随学】PyTorch框架班', '【随到随学】李飞飞斯坦福CS231n计算机视觉课',
+        # '【随到随学】斯坦福CS224n自然语言处理课训练营', '【随到随学】《深度学习》花书训练营',
+        # '【随到随学】AI大赛实战训练营',
     ]
     for good in no_download:
         goods_id_all.pop(good) #删除已经下载的内容
@@ -398,7 +398,7 @@ if __name__ == "__main__":
         courseslist = ds.get_courseslist(main_api, headers, data)
         num = len(courseslist)
         for ix, course in enumerate(courseslist):
-            dslogger.info(f'【下载({ix}/{num})】{course.get("title")}')
+            dslogger.info(f'【下载({ix + 1}/{num})】{course.get("title")[:20]}...')
             download_status = ds.download_course(page_api, headers, headers_video, course, dirpath)
    
         
