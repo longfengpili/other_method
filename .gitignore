@@ -1,4 +1,5 @@
-/.ipynb_checkpoints
-/__pycache__
-/.vscode
-Untitled.ipynb
+.ipynb_checkpoints
+__pycache__
+.vscode
+**/Untitled.ipynb
+mysetting.py
