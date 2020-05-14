@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-05-11 11:56:24
+# @Last Modified time: 2020-05-14 14:39:02
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -22,6 +22,9 @@ import base64
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from tqdm import tqdm
+from concurrent.futures import ThreadPoolExecutor
+import subprocess
+import shutil
 
 import colorlog
 log_colors_config = {
@@ -298,6 +301,26 @@ class DeepShare(object):
             if req.status_code != 200:
                 raise ValueError(f"request error ! 【{try_times}】{url}")
             return req
+
+        def download_ts(id, segment, temppath):
+            file_tmp = os.path.join(temppath, f"{id:0>4d}.ts")
+            try:
+                key_method = segment.get('key').get('method')
+                key_url = segment.get('key').get('uri')
+                key = myrequests(key_url).content
+                key_iv = segment.get('key').get('iv')
+                key_iv = key_iv.replace("0x", "")[:16].encode()  # 偏移码
+            except:
+                key = None
+            url = url_prefix + segment.get('uri') #拼接完整url
+            res = myrequests(url).content #获取视频内容
+            if key:  # AES 解密
+                cryptor = AES.new(key, AES.MODE_CBC, key_iv)
+                with open(file_tmp, 'wb') as f:
+                    f.write(cryptor.decrypt(res))
+            else:
+                with open(file_tmp, 'wb') as f:
+                    f.write(res)
         
         st = time.time()
         filepath = os.path.join(dirpath, title) + '.mp4'
@@ -321,27 +344,23 @@ class DeepShare(object):
             dslogger.info(f"{title}\n{all_content}")
             return 
 
-        for segment in tqdm(segments, ncols=80):
-            # dslogger.info(f"{segment}")
-            try:
-                key_method = segment.get('key').get('method')
-                key_url = segment.get('key').get('uri')
-                key = myrequests(key_url).content
-                key_iv = segment.get('key').get('iv')
-                key_iv = key_iv.replace("0x", "")[:16].encode()  # 偏移码
-            except:
-                key = None
-                
-            url = url_prefix + segment.get('uri') #拼接完整url
-            res = myrequests(url).content #获取视频内容
-            if key:  # AES 解密
-                cryptor = AES.new(key, AES.MODE_CBC, key_iv)
-                with open(filepath, 'ab') as f:
-                    f.write(cryptor.decrypt(res))
-            else:
-                with open(filepath, 'ab') as f:
-                    f.write(res)
-                    f.flush()
+        # 生成ts临时文件夹
+        temppath = filepath[:-4]
+        try:
+            os.mkdir(temppath)
+        except:
+            pass
+
+        # 读线程下载ts
+        segments_num = len(segments)
+        dslogger.info("The course have {segments_num} ts！")
+        with ThreadPoolExecutor(max_workers=10) as threadpool:
+            threadpool.map(download_ts, range(segments_num), segments, [temppath] * segments_num)
+
+        # 合并并删除临时文件夹
+        result = subprocess.run(["copy", "/b", f"{os.path.join(temppath, '*.ts')}", f"{filepath}"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        shutil.rmtree(temppath)
+
         if segments:
             et = time.time()
             dslogger.debug(f">>>>>>视频<<<<<<, 用时{et-st:.2f}秒")
@@ -374,19 +393,22 @@ if __name__ == "__main__":
     headers = ds.create_headers(headers)
     goods_id_all = ds.get_goods_id(goods_url, headers_agent)
     no_download = [
-        # '【随到随学】人工智能数学基础训练营', '【重磅升级】Python基础+数据科学入门训练营',
-        # '【随到随学】《机器学习》西瓜书训练营', '【随到随学】面试刷题+算法强化训练营',
-        # '【随到随学】吴恩达《机器学习》作业班', '【随到随学】李航《统计学习方法》书训练营',
-        # '【随到随学】PyTorch框架班', '【随到随学】李飞飞斯坦福CS231n计算机视觉课',
-        # '【随到随学】斯坦福CS224n自然语言处理课训练营', '【随到随学】《深度学习》花书训练营',
-        # '【随到随学】AI大赛实战训练营',
+        # '【随到随学】人工智能数学基础训练营',
+        '【重磅升级】Python基础+数据科学入门训练营',
+        '【随到随学】《机器学习》西瓜书训练营', '【随到随学】面试刷题+算法强化训练营',
+        '【随到随学】吴恩达《机器学习》作业班', '【随到随学】李航《统计学习方法》书训练营',
+        '【随到随学】PyTorch框架班', '【随到随学】李飞飞斯坦福CS231n计算机视觉课',
+        '【随到随学】斯坦福CS224n自然语言处理课训练营', '【随到随学】《深度学习》花书训练营',
+        '【随到随学】AI大赛实战训练营',
+        '人工智能Paper论文精读班（CV方向）', '人工智能Paper论文精读班（NLP方向）',
+        '人工智能项目实战班', '《机器学习》西瓜书训练营【第十二期】', 
     ]
     for good in no_download:
         goods_id_all.pop(good) #删除已经下载的内容
 
     for title, data in goods_id_all.items():
         dslogger.info(f"开始下载【{title}】")
-        dirpath = os.path.join('f:/深度之眼/', title)
+        dirpath = os.path.join('d:/深度之眼/', title)
         try:
             os.mkdir(dirpath)
             print(f'{dirpath}已经创建！')
