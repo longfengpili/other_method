@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-05-14 14:39:02
+# @Last Modified time: 2020-05-14 17:04:35
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -323,7 +323,8 @@ class DeepShare(object):
                     f.write(res)
         
         st = time.time()
-        filepath = os.path.join(dirpath, title) + '.mp4'
+        temppath = os.path.join(dirpath, title).replace('/', '\\') #后续用户合并，使用windows命令，必须这样处理
+        filepath = temppath + '.mp4'
         try:
             os.remove(filepath) #重新启动下载的话，删除原有下载
         except:
@@ -345,7 +346,6 @@ class DeepShare(object):
             return 
 
         # 生成ts临时文件夹
-        temppath = filepath[:-4]
         try:
             os.mkdir(temppath)
         except:
@@ -353,12 +353,15 @@ class DeepShare(object):
 
         # 读线程下载ts
         segments_num = len(segments)
-        dslogger.info("The course have {segments_num} ts！")
-        with ThreadPoolExecutor(max_workers=10) as threadpool:
-            threadpool.map(download_ts, range(segments_num), segments, [temppath] * segments_num)
+        dslogger.info(f"The course have {segments_num} ts！")
+        with ThreadPoolExecutor(max_workers=30) as threadpool:
+            list(tqdm(threadpool.map(download_ts, range(segments_num), segments, [temppath] * segments_num), 
+                        total=segments_num, ncols=80, desc="[视频下载]"))
 
         # 合并并删除临时文件夹
-        result = subprocess.run(["copy", "/b", f"{os.path.join(temppath, '*.ts')}", f"{filepath}"], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        result = subprocess.run(["copy", "/b", f"{os.path.join(temppath, '*.ts')}", f"{filepath}"], 
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        # dslogger.debug(f"stdin: {result.args}, stderr: {result.stderr}")
         shutil.rmtree(temppath)
 
         if segments:
