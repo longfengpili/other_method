@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-05-14 17:04:35
+# @Last Modified time: 2020-05-15 07:38:57
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -41,8 +41,12 @@ formatter = colorlog.ColoredFormatter(
 import logging
 handler = logging.StreamHandler()
 handler.setFormatter(formatter)
+handlerfile = logging.FileHandler('./erorr.log', encoding='utf-8')
+handlerfile.setFormatter(formatter)
+handlerfile.setLevel(logging.ERROR)
 dslogger = logging.getLogger('deepshare')
 dslogger.addHandler(handler)
+dslogger.addHandler(handlerfile)
 dslogger.setLevel(logging.DEBUG)
 
 class GetCooikiesFromChrome(object):
@@ -302,7 +306,10 @@ class DeepShare(object):
                 raise ValueError(f"request error ! 【{try_times}】{url}")
             return req
 
-        def download_ts(id, segment, temppath):
+        def download_ts(id, segment):
+            '''
+            temppath/url_prefix 来自上一层函数
+            '''
             file_tmp = os.path.join(temppath, f"{id:0>4d}.ts")
             try:
                 key_method = segment.get('key').get('method')
@@ -314,6 +321,7 @@ class DeepShare(object):
                 key = None
             url = url_prefix + segment.get('uri') #拼接完整url
             res = myrequests(url).content #获取视频内容
+            # dslogger.debug(f"{key_method}, {key}, {key_iv}")
             if key:  # AES 解密
                 cryptor = AES.new(key, AES.MODE_CBC, key_iv)
                 with open(file_tmp, 'wb') as f:
@@ -353,9 +361,9 @@ class DeepShare(object):
 
         # 读线程下载ts
         segments_num = len(segments)
-        dslogger.info(f"The course have {segments_num} ts！")
+        # dslogger.info(f"The course have {segments_num} ts！")
         with ThreadPoolExecutor(max_workers=30) as threadpool:
-            list(tqdm(threadpool.map(download_ts, range(segments_num), segments, [temppath] * segments_num), 
+            list(tqdm(threadpool.map(download_ts, range(segments_num), segments), 
                         total=segments_num, ncols=80, desc="[视频下载]"))
 
         # 合并并删除临时文件夹
@@ -385,8 +393,8 @@ class DeepShare(object):
                     time.sleep(1)
                     self.save_description(course_info, dirpath, title)
                     download_status = 'current'
-            except:
-                dslogger.error(f"course_main: {course}, course_page: {course_info}")
+            except Exception as e:
+                dslogger.error(f"【ERROR】：{e}\n【course】:{course_info}")
                 download_status = 'error'
         return download_status
 
@@ -397,21 +405,21 @@ if __name__ == "__main__":
     goods_id_all = ds.get_goods_id(goods_url, headers_agent)
     no_download = [
         # '【随到随学】人工智能数学基础训练营',
-        '【重磅升级】Python基础+数据科学入门训练营',
-        '【随到随学】《机器学习》西瓜书训练营', '【随到随学】面试刷题+算法强化训练营',
-        '【随到随学】吴恩达《机器学习》作业班', '【随到随学】李航《统计学习方法》书训练营',
-        '【随到随学】PyTorch框架班', '【随到随学】李飞飞斯坦福CS231n计算机视觉课',
-        '【随到随学】斯坦福CS224n自然语言处理课训练营', '【随到随学】《深度学习》花书训练营',
-        '【随到随学】AI大赛实战训练营',
-        '人工智能Paper论文精读班（CV方向）', '人工智能Paper论文精读班（NLP方向）',
-        '人工智能项目实战班', '《机器学习》西瓜书训练营【第十二期】', 
+        # '【重磅升级】Python基础+数据科学入门训练营',
+        # '【随到随学】《机器学习》西瓜书训练营', '【随到随学】面试刷题+算法强化训练营',
+        # '【随到随学】吴恩达《机器学习》作业班', '【随到随学】李航《统计学习方法》书训练营',
+        # '【随到随学】PyTorch框架班', '【随到随学】李飞飞斯坦福CS231n计算机视觉课',
+        # '【随到随学】斯坦福CS224n自然语言处理课训练营', '【随到随学】《深度学习》花书训练营',
+        # '【随到随学】AI大赛实战训练营',
+        # '人工智能Paper论文精读班（CV方向）', '人工智能Paper论文精读班（NLP方向）',
+        # '人工智能项目实战班', '《机器学习》西瓜书训练营【第十二期】', 
     ]
     for good in no_download:
         goods_id_all.pop(good) #删除已经下载的内容
 
     for title, data in goods_id_all.items():
         dslogger.info(f"开始下载【{title}】")
-        dirpath = os.path.join('d:/深度之眼/', title)
+        dirpath = os.path.join('f:/深度之眼/', title)
         try:
             os.mkdir(dirpath)
             print(f'{dirpath}已经创建！')
