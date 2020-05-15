@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-05-15 07:38:57
+# @Last Modified time: 2020-05-15 08:14:18
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -172,7 +172,7 @@ class DeepShare(object):
         for result in results:
             try:
                 goods_data = {"page_size":20,"last_id":"","resource_type":[1,2,3,4]}
-                title = result.div.div.string.strip()
+                title = result.div.div.string.strip().replace('+', '')
                 goods_id, goods_type = result['href'].split('/')[2], result['href'].split('/')[3]
                 goods_data['goods_id'] = goods_id
                 goods_data['goods_type'] = int(goods_type) if goods_type else 6
@@ -404,9 +404,9 @@ if __name__ == "__main__":
     headers = ds.create_headers(headers)
     goods_id_all = ds.get_goods_id(goods_url, headers_agent)
     no_download = [
-        # '【随到随学】人工智能数学基础训练营',
-        # '【重磅升级】Python基础+数据科学入门训练营',
-        # '【随到随学】《机器学习》西瓜书训练营', '【随到随学】面试刷题+算法强化训练营',
+        '【随到随学】人工智能数学基础训练营',
+        # '【重磅升级】Python基础数据科学入门训练营',
+        # '【随到随学】《机器学习》西瓜书训练营', '【随到随学】面试刷题算法强化训练营',
         # '【随到随学】吴恩达《机器学习》作业班', '【随到随学】李航《统计学习方法》书训练营',
         # '【随到随学】PyTorch框架班', '【随到随学】李飞飞斯坦福CS231n计算机视觉课',
         # '【随到随学】斯坦福CS224n自然语言处理课训练营', '【随到随学】《深度学习》花书训练营',
