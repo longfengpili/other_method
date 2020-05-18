@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-05-15 08:14:18
+# @Last Modified time: 2020-05-19 07:50:41
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -385,17 +385,20 @@ class DeepShare(object):
     def download_course(self, page_api, headers, headers_video, course, dirpath):
         download_status = 'downloaded'
         course_info = self.get_course_info(page_api, headers, course)
-        if course_info:
+        title = course_info.get('title', None)
+        if title:
             try:
-                title = course_info.get('title').replace('|', ',').replace(' ','').replace('/','')
+                title = title.replace('|', ',').replace(' ','').replace('/','').replace(':', '')
                 if f'{title}.html' not in self.get_videoslist_from_local(dirpath):
                     self.download_video(course_info, headers_video, dirpath, title)
                     time.sleep(1)
                     self.save_description(course_info, dirpath, title)
                     download_status = 'current'
             except Exception as e:
-                dslogger.error(f"【ERROR】：{e}\n【course】:{course_info}")
-                download_status = 'error'
+                dslogger.error(f"【ERROR】：{e}, 【course】:{course_info.get('title')}")
+                self.download_course(page_api, headers, headers_video, course, dirpath)
+        else:
+            dslogger.warning(f"{course_info}")
         return download_status
 
 
@@ -405,13 +408,14 @@ if __name__ == "__main__":
     goods_id_all = ds.get_goods_id(goods_url, headers_agent)
     no_download = [
         '【随到随学】人工智能数学基础训练营',
-        # '【重磅升级】Python基础数据科学入门训练营',
-        # '【随到随学】《机器学习》西瓜书训练营', '【随到随学】面试刷题算法强化训练营',
-        # '【随到随学】吴恩达《机器学习》作业班', '【随到随学】李航《统计学习方法》书训练营',
-        # '【随到随学】PyTorch框架班', '【随到随学】李飞飞斯坦福CS231n计算机视觉课',
-        # '【随到随学】斯坦福CS224n自然语言处理课训练营', '【随到随学】《深度学习》花书训练营',
-        # '【随到随学】AI大赛实战训练营',
-        # '人工智能Paper论文精读班（CV方向）', '人工智能Paper论文精读班（NLP方向）',
+        '【重磅升级】Python基础数据科学入门训练营',
+        '【随到随学】《机器学习》西瓜书训练营', '【随到随学】面试刷题算法强化训练营',
+        '【随到随学】吴恩达《机器学习》作业班', '【随到随学】李航《统计学习方法》书训练营',
+        '【随到随学】PyTorch框架班', '【随到随学】李飞飞斯坦福CS231n计算机视觉课',
+        '【随到随学】斯坦福CS224n自然语言处理课训练营', 
+        '【随到随学】《深度学习》花书训练营',
+        '【随到随学】AI大赛实战训练营',
+        '人工智能Paper论文精读班（CV方向）', '人工智能Paper论文精读班（NLP方向）',
         # '人工智能项目实战班', '《机器学习》西瓜书训练营【第十二期】', 
     ]
     for good in no_download:
