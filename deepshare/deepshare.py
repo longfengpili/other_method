@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-05-19 07:50:41
+# @Last Modified time: 2020-05-28 09:52:03
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -183,7 +183,9 @@ class DeepShare(object):
         return goods_id_all
 
     def get_videoslist_from_local(self, dirpath):
-        return os.listdir(dirpath)
+        files = os.listdir(dirpath)
+        files = [file[6:] for file in files]
+        return files
 
     def get_info_from_api(self, api, headers, data):
         '''[summary]
@@ -369,8 +371,10 @@ class DeepShare(object):
         # 合并并删除临时文件夹
         result = subprocess.run(["copy", "/b", f"{os.path.join(temppath, '*.ts')}", f"{filepath}"], 
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-        # dslogger.debug(f"stdin: {result.args}, stderr: {result.stderr}")
-        shutil.rmtree(temppath)
+        if not os.path.isfile(filepath):
+            dslogger.error(f"stdin: {result.args}, stderr: {result.stderr}")
+        else:
+            shutil.rmtree(temppath)
 
         if segments:
             et = time.time()
@@ -382,14 +386,17 @@ class DeepShare(object):
             f.write(content)
         dslogger.debug(f">>>>>>网页<<<<<<")
 
-    def download_course(self, page_api, headers, headers_video, course, dirpath):
+    def download_course(self, index, page_api, headers, headers_video, course, dirpath):
         download_status = 'downloaded'
         course_info = self.get_course_info(page_api, headers, course)
-        title = course_info.get('title', None)
+        title_noix = course_info.get('title', None)
+        title = f"【{index:0>4d}】{title_noix}"
         if title:
             try:
-                title = title.replace('|', ',').replace(' ','').replace('/','').replace(':', '')
-                if f'{title}.html' not in self.get_videoslist_from_local(dirpath):
+                trips = '<>/\|:"*? +-'
+                for t in trips:
+                    title = title.replace(t, '')
+                if f'{title_noix}.html' not in self.get_videoslist_from_local(dirpath):
                     self.download_video(course_info, headers_video, dirpath, title)
                     time.sleep(1)
                     self.save_description(course_info, dirpath, title)
@@ -406,17 +413,20 @@ if __name__ == "__main__":
     ds = DeepShare(app_id)
     headers = ds.create_headers(headers)
     goods_id_all = ds.get_goods_id(goods_url, headers_agent)
+    # dslogger.info(goods_id_all)
     no_download = [
-        '【随到随学】人工智能数学基础训练营',
-        '【重磅升级】Python基础数据科学入门训练营',
-        '【随到随学】《机器学习》西瓜书训练营', '【随到随学】面试刷题算法强化训练营',
-        '【随到随学】吴恩达《机器学习》作业班', '【随到随学】李航《统计学习方法》书训练营',
-        '【随到随学】PyTorch框架班', '【随到随学】李飞飞斯坦福CS231n计算机视觉课',
-        '【随到随学】斯坦福CS224n自然语言处理课训练营', 
-        '【随到随学】《深度学习》花书训练营',
-        '【随到随学】AI大赛实战训练营',
-        '人工智能Paper论文精读班（CV方向）', '人工智能Paper论文精读班（NLP方向）',
-        # '人工智能项目实战班', '《机器学习》西瓜书训练营【第十二期】', 
+        # '【随到随学】人工智能数学基础训练营',
+        # '【重磅升级】Python基础数据科学入门训练营',
+        # '【随到随学】《机器学习》西瓜书训练营', '【随到随学】面试刷题算法强化训练营',
+        # '【随到随学】吴恩达《机器学习》作业班', '【随到随学】李航《统计学习方法》书训练营',
+        # '【随到随学】PyTorch框架班', 
+        # '【随到随学】李飞飞斯坦福CS231n计算机视觉课',
+        # '【随到随学】斯坦福CS224n自然语言处理课训练营', 
+        # '【随到随学】《深度学习》花书训练营',
+        # '【随到随学】AI大赛实战训练营',
+        # '人工智能项目实战班', 
+        # '《机器学习》西瓜书训练营【第十二期】', 
+        # '天池KDD大赛指导班',
     ]
     for good in no_download:
         goods_id_all.pop(good) #删除已经下载的内容
@@ -436,7 +446,7 @@ if __name__ == "__main__":
         num = len(courseslist)
         for ix, course in enumerate(courseslist):
             dslogger.info(f'【下载({ix + 1}/{num})】{course.get("title")[:20]}...')
-            download_status = ds.download_course(page_api, headers, headers_video, course, dirpath)
+            download_status = ds.download_course(ix, page_api, headers, headers_video, course, dirpath)
    
         
         # break
