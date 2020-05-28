@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-05-28 09:52:03
+# @Last Modified time: 2020-05-28 10:06:14
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -185,6 +185,7 @@ class DeepShare(object):
     def get_videoslist_from_local(self, dirpath):
         files = os.listdir(dirpath)
         files = [file[6:] for file in files]
+        # dslogger.info(files)
         return files
 
     def get_info_from_api(self, api, headers, data):
@@ -312,6 +313,7 @@ class DeepShare(object):
             '''
             temppath/url_prefix 来自上一层函数
             '''
+            result = True
             file_tmp = os.path.join(temppath, f"{id:0>4d}.ts")
             try:
                 key_method = segment.get('key').get('method')
@@ -353,7 +355,8 @@ class DeepShare(object):
         segments = m3u8_data.get('segments')
         if not segments: #如果没有
             dslogger.info(f"{title}\n{all_content}")
-            return 
+            result = False
+            return result
 
         # 生成ts临时文件夹
         try:
@@ -369,17 +372,20 @@ class DeepShare(object):
                         total=segments_num, ncols=80, desc="[视频下载]"))
 
         # 合并并删除临时文件夹
-        result = subprocess.run(["copy", "/b", f"{os.path.join(temppath, '*.ts')}", f"{filepath}"], 
+        subresult = subprocess.run(["copy", "/b", f"{os.path.join(temppath, '*.ts')}", f"{filepath}"], 
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         if not os.path.isfile(filepath):
-            dslogger.error(f"stdin: {result.args}, stderr: {result.stderr}")
+            dslogger.error(f"stdin: {subresult.args}, stderr: {subresult.stderr}")
+            result = False
         else:
             shutil.rmtree(temppath)
 
         if segments:
             et = time.time()
             dslogger.debug(f">>>>>>视频<<<<<<, 用时{et-st:.2f}秒")
-        
+
+        return result
+
     def save_description(self, course_info, dirpath, title):
         content = course_info.get('content', '')
         with open(f'{dirpath}/{title}.html', 'w', encoding='utf-8') as f:
@@ -390,16 +396,17 @@ class DeepShare(object):
         download_status = 'downloaded'
         course_info = self.get_course_info(page_api, headers, course)
         title_noix = course_info.get('title', None)
-        title = f"【{index:0>4d}】{title_noix}"
-        if title:
+        if title_noix:
             try:
                 trips = '<>/\|:"*? +-'
                 for t in trips:
-                    title = title.replace(t, '')
+                    title_noix = title_noix.replace(t, '')
+                title = f"【{index:0>4d}】{title_noix}"
                 if f'{title_noix}.html' not in self.get_videoslist_from_local(dirpath):
-                    self.download_video(course_info, headers_video, dirpath, title)
-                    time.sleep(1)
-                    self.save_description(course_info, dirpath, title)
+                    result = self.download_video(course_info, headers_video, dirpath, title)
+                    if result:
+                        time.sleep(1)
+                        self.save_description(course_info, dirpath, title)
                     download_status = 'current'
             except Exception as e:
                 dslogger.error(f"【ERROR】：{e}, 【course】:{course_info.get('title')}")
