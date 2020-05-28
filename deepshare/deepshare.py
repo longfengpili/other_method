@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-05-28 10:06:14
+# @Last Modified time: 2020-05-28 10:25:31
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -313,7 +313,6 @@ class DeepShare(object):
             '''
             temppath/url_prefix 来自上一层函数
             '''
-            result = True
             file_tmp = os.path.join(temppath, f"{id:0>4d}.ts")
             try:
                 key_method = segment.get('key').get('method')
@@ -334,6 +333,7 @@ class DeepShare(object):
                 with open(file_tmp, 'wb') as f:
                     f.write(res)
         
+        result = True
         st = time.time()
         temppath = os.path.join(dirpath, title).replace('/', '\\') #后续用户合并，使用windows命令，必须这样处理
         filepath = temppath + '.mp4'
@@ -344,7 +344,7 @@ class DeepShare(object):
         
         url = course_info.get('video_m3u8').replace("http", "https")
         if not url:
-            return
+            return result
         url_prefix = url.split('v.f230')[0]
 
         all_content = myrequests(url).text  # 获取m3u8文件
@@ -410,7 +410,7 @@ class DeepShare(object):
                     download_status = 'current'
             except Exception as e:
                 dslogger.error(f"【ERROR】：{e}, 【course】:{course_info.get('title')}")
-                self.download_course(page_api, headers, headers_video, course, dirpath)
+                self.download_course(index, page_api, headers, headers_video, course, dirpath)
         else:
             dslogger.warning(f"{course_info}")
         return download_status
@@ -433,14 +433,14 @@ if __name__ == "__main__":
         # '【随到随学】AI大赛实战训练营',
         # '人工智能项目实战班', 
         # '《机器学习》西瓜书训练营【第十二期】', 
-        # '天池KDD大赛指导班',
+        '天池KDD大赛指导班',
     ]
     for good in no_download:
         goods_id_all.pop(good) #删除已经下载的内容
 
     for title, data in goods_id_all.items():
         dslogger.info(f"开始下载【{title}】")
-        dirpath = os.path.join('f:/深度之眼/', title)
+        dirpath = os.path.join('D:/深度之眼/', title)
         try:
             os.mkdir(dirpath)
             print(f'{dirpath}已经创建！')
@@ -452,7 +452,8 @@ if __name__ == "__main__":
         courseslist = ds.get_courseslist(main_api, headers, data)
         num = len(courseslist)
         for ix, course in enumerate(courseslist):
-            dslogger.info(f'【下载({ix + 1}/{num})】{course.get("title")[:20]}...')
+            ix += 1
+            dslogger.info(f'【下载({ix}/{num})】{course.get("title")[:20]}...')
             download_status = ds.download_course(ix, page_api, headers, headers_video, course, dirpath)
    
         
