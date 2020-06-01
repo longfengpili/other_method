@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-05-28 10:25:31
+# @Last Modified time: 2020-06-02 07:26:37
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -301,9 +301,9 @@ class DeepShare(object):
         '''
         def myrequests(url, headers=headers_video, times=5):
             try_times = 0
-            req = requests.get(url, headers=headers)
+            req = requests.get(url, headers=headers, timeout=60)
             while req.status_code != 200 and try_times < times:
-                req = requests.get(url, headers=headers)
+                req = requests.get(url, headers=headers, timeout=60)
                 try_times += 1
             if req.status_code != 200:
                 raise ValueError(f"request error ! 【{try_times}】{url}")
@@ -398,9 +398,9 @@ class DeepShare(object):
         title_noix = course_info.get('title', None)
         if title_noix:
             try:
-                trips = '<>/\|:"*? +-'
+                trips = '<>/\|:"*? +-&,'
                 for t in trips:
-                    title_noix = title_noix.replace(t, '')
+                    title_noix = title_noix.replace(t, '_')
                 title = f"【{index:0>4d}】{title_noix}"
                 if f'{title_noix}.html' not in self.get_videoslist_from_local(dirpath):
                     result = self.download_video(course_info, headers_video, dirpath, title)
@@ -433,14 +433,14 @@ if __name__ == "__main__":
         # '【随到随学】AI大赛实战训练营',
         # '人工智能项目实战班', 
         # '《机器学习》西瓜书训练营【第十二期】', 
-        '天池KDD大赛指导班',
+        # '天池KDD大赛指导班',
     ]
     for good in no_download:
         goods_id_all.pop(good) #删除已经下载的内容
 
     for title, data in goods_id_all.items():
         dslogger.info(f"开始下载【{title}】")
-        dirpath = os.path.join('D:/深度之眼/', title)
+        dirpath = os.path.join('f:/深度之眼/', title)
         try:
             os.mkdir(dirpath)
             print(f'{dirpath}已经创建！')
