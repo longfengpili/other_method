@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-06-08 08:02:17
+# @Last Modified time: 2020-06-09 08:16:12
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -242,7 +242,7 @@ class DeepShare(object):
             
         if courses_info:
             courses_info = sorted(courses_info, key=lambda x: x['start_at'])
-            selection = ['resource_id', 'resource_type', 'title', 'redirect_url']
+            selection = ['resource_id', 'resource_type', 'title', 'redirect_url', 'start_at']
             for course in courses_info:
                 # dslogger.info(course)
                 selection_info = [course.get(key) for key in selection]
@@ -256,7 +256,7 @@ class DeepShare(object):
                 data['order_type'] = 0
                 return self.get_courseslist(main_api, headers, data)
         if self.courseslist:
-            dslogger.info(f"This Good have {len(self.courseslist)} courses!")
+            dslogger.info(f"【last_updated: {self.courseslist[-1].get('start_at')}】This Good have {len(self.courseslist)} courses!")
         else:
             dslogger.warning(f"{req}")
         return self.courseslist
@@ -424,17 +424,17 @@ if __name__ == "__main__":
     goods_id_all = ds.get_goods_id(goods_url, headers_agent)
     # dslogger.info(goods_id_all.keys())
     no_download = [
-    '《机器学习》西瓜书训练营【第14期】', '《深度学习》花书训练营【第6期】', 
-    '李航《统计学习方法》训练营第八期', '【超口碑】PyTorch框架班第四期', 
+    # '《机器学习》西瓜书训练营【第14期】', '《深度学习》花书训练营【第6期】', 
+    # '李航《统计学习方法》训练营第八期', '【超口碑】PyTorch框架班第四期', 
     # '【新班首发】深度学习TensorFlow2.0框架项目班', 
-    '天池KDD大赛指导班', 
+    # '天池KDD大赛指导班', 
     '【随到随学】人工智能数学基础训练营', '【重磅升级】Python基础数据科学入门训练营', 
     '【随到随学】机器学习算法工程师特训营', '【随到随学】吴恩达《机器学习》作业班', 
     '【随到随学】李航《统计学习方法》书训练营', '【随到随学】《机器学习》西瓜书训练营', 
     '【随到随学】PyTorch框架班', '【随到随学】《深度学习》花书训练营', 
     '【随到随学】李飞飞斯坦福CS231n计算机视觉课', '【随到随学】斯坦福CS224n自然语言处理课训练营', 
     '【随到随学】面试刷题算法强化训练营', '【随到随学】AI大赛实战训练营', 
-    '人工智能项目实战班',
+    # '人工智能项目实战班',
     ]
     for good in no_download:
         goods_id_all.pop(good) #删除已经下载的内容
