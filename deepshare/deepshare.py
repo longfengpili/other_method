@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-06-09 08:16:12
+# @Last Modified time: 2020-06-12 06:58:43
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -434,10 +434,13 @@ if __name__ == "__main__":
     '【随到随学】PyTorch框架班', '【随到随学】《深度学习》花书训练营', 
     '【随到随学】李飞飞斯坦福CS231n计算机视觉课', '【随到随学】斯坦福CS224n自然语言处理课训练营', 
     '【随到随学】面试刷题算法强化训练营', '【随到随学】AI大赛实战训练营', 
-    # '人工智能项目实战班',
+    '人工智能项目实战班',
     ]
     for good in no_download:
-        goods_id_all.pop(good) #删除已经下载的内容
+        if good in goods_id_all:
+            goods_id_all.pop(good) #删除已经下载的内容
+        else:
+            dslogger.info(f"{good} not found in mainpage !")
 
     for title, data in goods_id_all.items():
         dslogger.info(f"开始下载【{title}】")
