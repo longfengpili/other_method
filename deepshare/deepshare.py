@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-06-12 06:58:43
+# @Last Modified time: 2020-06-18 08:19:21
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -112,7 +112,7 @@ class GetCooikiesFromChrome(object):
         con.row_factory = sqlite3.Row
         cur = con.cursor()
         cur.execute(sql)
-        
+
         cookie = ''
         for row in cur:
             if row['value'] is not None:
@@ -137,10 +137,10 @@ class DeepShare(object):
         '''[summary]
             生成带cookies的headers
         [description]
-        
+
         Arguments:
             headers {[dict]} -- [不带cookie的默认内容]
-        
+
         Returns:
             [dict] -- [带cookies的headers]
         '''
@@ -155,13 +155,13 @@ class DeepShare(object):
     def get_goods_id(self, goods_url, headers_agent):
         '''[summary]
         获取所有课程id
-        
+
         [description]
-        
+
         Arguments:
             goods_url {[str]} -- [课程总展示页面]
             headers_agent {[dict]} -- [只带有user_agent的headers]
-        
+
         Returns:
             [dict] -- [所有课程信息]
         '''
@@ -192,13 +192,13 @@ class DeepShare(object):
         '''[summary]
         通过API获取单个课程信息 method:POST
         [description]
-        
+
         Arguments:
             api {[str]} -- [api url]
             headers {[dict]} -- [cookies headers]
             params {[dict]} -- [requests params]
             data {[dict]} -- [requests POST data]
-        
+
         Returns:
             [dict] -- [课程信息]
         '''
@@ -212,20 +212,20 @@ class DeepShare(object):
             dslogger.error(f'{e}\n{req}')
             while not req:
                 req = get_info_from_api(api, headers, params, data)
-        
+
         return req
 
     def get_courseslist(self, main_api, headers, data):
         '''[summary]
         获取单个课程的所有课程列表
-        
+
         [description]
-        
+
         Arguments:
             api {[str]} -- [api url]
             headers {[dict]} -- [cookies headers]
             data {[dict]} -- [requests POST data]
-        
+
         Returns:
             [type] -- [description]
         '''
@@ -239,9 +239,9 @@ class DeepShare(object):
             last_id = req.get('data').get('last_id')
         except Exception as e:
             dslogger.error(f'{e}\n{req}')
-            
+
         if courses_info:
-            courses_info = sorted(courses_info, key=lambda x: x['start_at'])
+            # courses_info = sorted(courses_info, key=lambda x: x['start_at'])
             selection = ['resource_id', 'resource_type', 'title', 'redirect_url', 'start_at']
             for course in courses_info:
                 # dslogger.info(course)
@@ -260,19 +260,19 @@ class DeepShare(object):
         else:
             dslogger.warning(f"{req}")
         return self.courseslist
-    
+
 
     def get_course_info(self, page_api, headers, course):
         '''[summary]
         获取单个课程的信息
-        
+
         [description]
-        
+
         Arguments:
             page_api {[str]} -- [单个课程api]
             headers {[dict]} -- [cookies headers]
             course {[dict]} -- [课程信息（简单）]
-        
+
         Returns:
             [dict] -- [课程信息]
         '''
@@ -289,15 +289,15 @@ class DeepShare(object):
     def download_video(self, course_info, headers_video, dirpath, title):
         '''[summary]
         下载视频
-        
+
         [description]
-        
+
         Arguments:
             course_info {[dict]} -- [课程详细信息]
             headers_video {[dict]} -- [下载视频的headers]
             dirpath {[str]} -- [下载目录]
             title {[str]} -- [视频名]
-        
+
         Returns:
             [type] -- [description]
         '''
@@ -334,7 +334,7 @@ class DeepShare(object):
             else:
                 with open(file_tmp, 'wb') as f:
                     f.write(res)
-        
+
         result = True
         st = time.time()
         temppath = os.path.join(dirpath, title).replace('/', '\\') #后续用户合并，使用windows命令，必须这样处理
@@ -343,7 +343,7 @@ class DeepShare(object):
             os.remove(filepath) #重新启动下载的话，删除原有下载
         except:
             pass
-        
+
         url = course_info.get('video_m3u8').replace("http", "https")
         if not url:
             return result
@@ -370,11 +370,11 @@ class DeepShare(object):
         segments_num = len(segments)
         # dslogger.info(f"The course have {segments_num} ts！")
         with ThreadPoolExecutor(max_workers=60) as threadpool:
-            list(tqdm(threadpool.map(download_ts, range(segments_num), segments), 
+            list(tqdm(threadpool.map(download_ts, range(segments_num), segments),
                         total=segments_num, ncols=80, desc="[视频下载]"))
 
         # 合并并删除临时文件夹
-        subresult = subprocess.run(["copy", "/b", f"{os.path.join(temppath, '*.ts')}", f"{filepath}"], 
+        subresult = subprocess.run(["copy", "/b", f"{os.path.join(temppath, '*.ts')}", f"{filepath}"],
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         if not os.path.isfile(filepath):
             dslogger.error(f"stdin: {subresult.args}, stderr: {subresult.stderr}")
@@ -410,6 +410,21 @@ class DeepShare(object):
                         time.sleep(1)
                         self.save_description(course_info, dirpath, title)
                     download_status = 'current'
+                elif f'{title}.html' not in os.listdir(dirpath):
+                    files = os.listdir(dirpath)
+                    # print(files)
+                    oldfiles = [file for file in files if f'{title_noix}' in file]
+                    for file in oldfiles:
+                        oldfile = os.path.join(dirpath, file)
+                        newfile = os.path.join(dirpath, f"{title}.{file.split('.')[1]}")
+                        try:
+                            os.rename(oldfile, newfile)
+                            dslogger.debug(f"【RENAME】{file} rename to {title}.{file.split('.')[1]}")
+                        except Exception as e:
+                            if '文件已存在' in e.__str__():
+                                os.remove(oldfile)
+                                dslogger.debug(f"【RENAME】{title}.{file.split('.')[1]}已存在，删除处理！")
+
             except Exception as e:
                 dslogger.error(f"【ERROR】：{e}, 【course】:{course_info.get('title')}")
                 self.download_course(index, page_api, headers, headers_video, course, dirpath)
@@ -424,16 +439,16 @@ if __name__ == "__main__":
     goods_id_all = ds.get_goods_id(goods_url, headers_agent)
     # dslogger.info(goods_id_all.keys())
     no_download = [
-    # '《机器学习》西瓜书训练营【第14期】', '《深度学习》花书训练营【第6期】', 
-    # '李航《统计学习方法》训练营第八期', '【超口碑】PyTorch框架班第四期', 
-    # '【新班首发】深度学习TensorFlow2.0框架项目班', 
-    # '天池KDD大赛指导班', 
-    '【随到随学】人工智能数学基础训练营', '【重磅升级】Python基础数据科学入门训练营', 
-    '【随到随学】机器学习算法工程师特训营', '【随到随学】吴恩达《机器学习》作业班', 
-    '【随到随学】李航《统计学习方法》书训练营', '【随到随学】《机器学习》西瓜书训练营', 
-    '【随到随学】PyTorch框架班', '【随到随学】《深度学习》花书训练营', 
-    '【随到随学】李飞飞斯坦福CS231n计算机视觉课', '【随到随学】斯坦福CS224n自然语言处理课训练营', 
-    '【随到随学】面试刷题算法强化训练营', '【随到随学】AI大赛实战训练营', 
+    # '《机器学习》西瓜书训练营【第14期】', '《深度学习》花书训练营【第6期】',
+    # '李航《统计学习方法》训练营第八期', '【超口碑】PyTorch框架班第四期',
+    # '【新班首发】深度学习TensorFlow2.0框架项目班',
+    # '天池KDD大赛指导班',
+    '【随到随学】人工智能数学基础训练营', '【重磅升级】Python基础数据科学入门训练营',
+    '【随到随学】机器学习算法工程师特训营', '【随到随学】吴恩达《机器学习》作业班',
+    '【随到随学】李航《统计学习方法》书训练营', '【随到随学】《机器学习》西瓜书训练营',
+    '【随到随学】PyTorch框架班', '【随到随学】《深度学习》花书训练营',
+    '【随到随学】李飞飞斯坦福CS231n计算机视觉课', '【随到随学】斯坦福CS224n自然语言处理课训练营',
+    '【随到随学】面试刷题算法强化训练营', '【随到随学】AI大赛实战训练营',
     '人工智能项目实战班',
     ]
     for good in no_download:
@@ -459,8 +474,8 @@ if __name__ == "__main__":
             ix += 1
             dslogger.info(f'【下载({ix}/{num})】{course.get("title")[:20]}...')
             download_status = ds.download_course(ix, page_api, headers, headers_video, course, dirpath)
-   
-        
+
+
         # break
 
     # os.system('shutdown -s -t 60')
