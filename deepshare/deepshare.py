@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-06-18 08:19:21
+# @Last Modified time: 2020-06-19 08:03:24
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -182,7 +182,7 @@ class DeepShare(object):
                 dslogger.error(result)
         return goods_id_all
 
-    def get_videoslist_from_local(self, dirpath):
+    def get_filelist_from_local(self, dirpath):
         files = os.listdir(dirpath)
         files = [file[6:] for file in files]
         # dslogger.info(files)
@@ -301,7 +301,7 @@ class DeepShare(object):
         Returns:
             [type] -- [description]
         '''
-        def myrequests(url, headers=headers_video, times=5):
+        def myrequests(url, headers=headers_video, times=20):
             try_times = 0
             req = requests.get(url, headers=headers, timeout=60)
             while req.status_code != 200 and try_times < times:
@@ -396,6 +396,8 @@ class DeepShare(object):
 
     def download_course(self, index, page_api, headers, headers_video, course, dirpath):
         download_status = 'downloaded'
+        files = os.listdir(dirpath)
+        files_noix = self.get_filelist_from_local(dirpath)
         course_info = self.get_course_info(page_api, headers, course)
         title_noix = course_info.get('title', None)
         if title_noix:
@@ -404,26 +406,21 @@ class DeepShare(object):
                 for t in trips:
                     title_noix = title_noix.replace(t, '_')
                 title = f"【{index:0>4d}】{title_noix}"
-                if f'{title_noix}.html' not in self.get_videoslist_from_local(dirpath):
-                    result = self.download_video(course_info, headers_video, dirpath, title)
-                    if result:
-                        time.sleep(1)
-                        self.save_description(course_info, dirpath, title)
-                    download_status = 'current'
-                elif f'{title}.html' not in os.listdir(dirpath):
-                    files = os.listdir(dirpath)
-                    # print(files)
-                    oldfiles = [file for file in files if f'{title_noix}' in file]
-                    for file in oldfiles:
-                        oldfile = os.path.join(dirpath, file)
-                        newfile = os.path.join(dirpath, f"{title}.{file.split('.')[1]}")
-                        try:
+
+                if f"{title}.html" not in files:
+                    if f"{title_noix}.mp4" in files_noix:
+                        oldfiles = [file for file in files if f'{title_noix}' in file]
+                        for file in oldfiles:
+                            oldfile = os.path.join(dirpath, file)
+                            newfile = os.path.join(dirpath, f"{title}.{file.split('.')[-1]}")
                             os.rename(oldfile, newfile)
-                            dslogger.debug(f"【RENAME】{file} rename to {title}.{file.split('.')[1]}")
-                        except Exception as e:
-                            if '文件已存在' in e.__str__():
-                                os.remove(oldfile)
-                                dslogger.debug(f"【RENAME】{title}.{file.split('.')[1]}已存在，删除处理！")
+                            dslogger.debug(f"【RENAME】{file} rename to {title}.{file.split('.')[-1]}")
+                    else:
+                        result = self.download_video(course_info, headers_video, dirpath, title)
+                        if result:
+                            time.sleep(1)
+                            self.save_description(course_info, dirpath, title)
+                download_status = 'current'
 
             except Exception as e:
                 dslogger.error(f"【ERROR】：{e}, 【course】:{course_info.get('title')}")
@@ -443,6 +440,7 @@ if __name__ == "__main__":
     # '李航《统计学习方法》训练营第八期', '【超口碑】PyTorch框架班第四期',
     # '【新班首发】深度学习TensorFlow2.0框架项目班',
     # '天池KDD大赛指导班',
+    # 'Paper会员体验课', '【NLP经典比赛】疫情期间网民情绪识别大赛】',
     '【随到随学】人工智能数学基础训练营', '【重磅升级】Python基础数据科学入门训练营',
     '【随到随学】机器学习算法工程师特训营', '【随到随学】吴恩达《机器学习》作业班',
     '【随到随学】李航《统计学习方法》书训练营', '【随到随学】《机器学习》西瓜书训练营',
