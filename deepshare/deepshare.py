@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-06-19 08:03:24
+# @Last Modified time: 2020-06-22 07:29:10
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -415,11 +415,19 @@ class DeepShare(object):
                             newfile = os.path.join(dirpath, f"{title}.{file.split('.')[-1]}")
                             os.rename(oldfile, newfile)
                             dslogger.debug(f"【RENAME】{file} rename to {title}.{file.split('.')[-1]}")
+                        if not f"{title}.html" in os.listdir(dirpath):
+                            self.save_description(course_info, dirpath, title)
                     else:
                         result = self.download_video(course_info, headers_video, dirpath, title)
                         if result:
                             time.sleep(1)
                             self.save_description(course_info, dirpath, title)
+                        files = [file for file in files if f'【{index:0>4d}】' in file and title not in file] #删除非本堂课程
+                        for file in files:
+                            file = os.path.join(dirpath, file)
+                            os.remove(file)
+                            dslogger.debug(f"【DEL】delete {file} !")
+
                 download_status = 'current'
 
             except Exception as e:
@@ -441,13 +449,15 @@ if __name__ == "__main__":
     # '【新班首发】深度学习TensorFlow2.0框架项目班',
     # '天池KDD大赛指导班',
     # 'Paper会员体验课', '【NLP经典比赛】疫情期间网民情绪识别大赛】',
+
+    '【随到随学】李航《统计学习方法》书训练营（含无监督学习部分）',
     '【随到随学】人工智能数学基础训练营', '【重磅升级】Python基础数据科学入门训练营',
     '【随到随学】机器学习算法工程师特训营', '【随到随学】吴恩达《机器学习》作业班',
     '【随到随学】李航《统计学习方法》书训练营', '【随到随学】《机器学习》西瓜书训练营',
     '【随到随学】PyTorch框架班', '【随到随学】《深度学习》花书训练营',
     '【随到随学】李飞飞斯坦福CS231n计算机视觉课', '【随到随学】斯坦福CS224n自然语言处理课训练营',
     '【随到随学】面试刷题算法强化训练营', '【随到随学】AI大赛实战训练营',
-    '人工智能项目实战班',
+    '人工智能项目实战班', '【NLP经典比赛】疫情期间网民情绪识别大赛',
     ]
     for good in no_download:
         if good in goods_id_all:
