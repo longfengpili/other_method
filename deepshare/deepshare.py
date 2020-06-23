@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-06-22 07:29:10
+# @Last Modified time: 2020-06-23 07:37:02
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -424,9 +424,10 @@ class DeepShare(object):
                             self.save_description(course_info, dirpath, title)
                         files = [file for file in files if f'【{index:0>4d}】' in file and title not in file] #删除非本堂课程
                         for file in files:
-                            file = os.path.join(dirpath, file)
-                            os.remove(file)
-                            dslogger.debug(f"【DEL】delete {file} !")
+                            oldfile = os.path.join(dirpath, file)
+                            newfile = os.path.join(dirpath, f'【0000】{file[6:]}')
+                            os.rename(oldfile, newfile)
+                            dslogger.debug(f"【RENAME】{file} rename to 【0000】{file[6:]}")
 
                 download_status = 'current'
 
