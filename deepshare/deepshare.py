@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-06-23 07:37:02
+# @Last Modified time: 2020-06-24 07:36:15
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -339,15 +339,9 @@ class DeepShare(object):
         st = time.time()
         temppath = os.path.join(dirpath, title).replace('/', '\\') #后续用户合并，使用windows命令，必须这样处理
         filepath = temppath + '.mp4'
-        try:
-            os.remove(filepath) #重新启动下载的话，删除原有下载
-        except:
-            pass
 
         url = course_info.get('video_m3u8').replace("http", "https")
-        if not url:
-            return result
-        url_prefix = url.split('v.f230')[0]
+        if not url: return result
 
         all_content = myrequests(url).text  # 获取m3u8文件
         if "#EXTM3U" not in all_content:
@@ -361,12 +355,11 @@ class DeepShare(object):
             return result
 
         # 生成ts临时文件夹
-        try:
+        if not os.path.exists(temppath):
             os.mkdir(temppath)
-        except:
-            pass
 
         # 读线程下载ts
+        url_prefix = url.split('v.f230')[0]
         segments_num = len(segments)
         # dslogger.info(f"The course have {segments_num} ts！")
         with ThreadPoolExecutor(max_workers=60) as threadpool:
@@ -382,9 +375,8 @@ class DeepShare(object):
         else:
             shutil.rmtree(temppath)
 
-        if segments:
-            et = time.time()
-            dslogger.debug(f">>>>>>视频<<<<<<, 用时{et-st:.2f}秒")
+        et = time.time()
+        dslogger.debug(f">>>>>>视频<<<<<<, 用时{et-st:.2f}秒")
 
         return result
 
@@ -395,48 +387,40 @@ class DeepShare(object):
         dslogger.debug(f">>>>>>网页<<<<<<")
 
     def download_course(self, index, page_api, headers, headers_video, course, dirpath):
-        download_status = 'downloaded'
+        def rename_file(dirpath, oldfile, newfile):
+            oldfile = os.path.join(dirpath, oldfile)
+            newfile = os.path.join(dirpath, newfile)
+            os.rename(oldfile, newfile)
+            dslogger.debug(f"【RENAME】{oldfile} rename to {newfile}")
+
         files = os.listdir(dirpath)
         files_noix = self.get_filelist_from_local(dirpath)
         course_info = self.get_course_info(page_api, headers, course)
         title_noix = course_info.get('title', None)
-        if title_noix:
-            try:
-                trips = '<>/\|:"*? +-&,'
-                for t in trips:
-                    title_noix = title_noix.replace(t, '_')
-                title = f"【{index:0>4d}】{title_noix}"
+        trips = '<>/\|:"*? +-&,'
+        for t in trips:
+            title_noix = title_noix.replace(t, '_')
+        title = f"【{index:0>4d}】{title_noix}"
 
-                if f"{title}.html" not in files:
-                    if f"{title_noix}.mp4" in files_noix:
-                        oldfiles = [file for file in files if f'{title_noix}' in file]
-                        for file in oldfiles:
-                            oldfile = os.path.join(dirpath, file)
-                            newfile = os.path.join(dirpath, f"{title}.{file.split('.')[-1]}")
-                            os.rename(oldfile, newfile)
-                            dslogger.debug(f"【RENAME】{file} rename to {title}.{file.split('.')[-1]}")
-                        if not f"{title}.html" in os.listdir(dirpath):
-                            self.save_description(course_info, dirpath, title)
-                    else:
-                        result = self.download_video(course_info, headers_video, dirpath, title)
-                        if result:
-                            time.sleep(1)
-                            self.save_description(course_info, dirpath, title)
-                        files = [file for file in files if f'【{index:0>4d}】' in file and title not in file] #删除非本堂课程
-                        for file in files:
-                            oldfile = os.path.join(dirpath, file)
-                            newfile = os.path.join(dirpath, f'【0000】{file[6:]}')
-                            os.rename(oldfile, newfile)
-                            dslogger.debug(f"【RENAME】{file} rename to 【0000】{file[6:]}")
+        if not title_noix:
+            raise ValueError(f"{course_info}")
 
-                download_status = 'current'
+        if f"{title}.html" not in files and f"{title_noix}.mp4" in files_noix:
+            oldfiles = [file for file in files if f'{title_noix}' in file]
+            for file in oldfiles:
+                rename_file(dirpath, file, f"{title}.{file.split('.')[-1]}")
 
-            except Exception as e:
-                dslogger.error(f"【ERROR】：{e}, 【course】:{course_info.get('title')}")
-                self.download_course(index, page_api, headers, headers_video, course, dirpath)
-        else:
-            dslogger.warning(f"{course_info}")
-        return download_status
+        if f"{title_noix}.mp4" not in files_noix:
+            result = self.download_video(course_info, headers_video, dirpath, title)
+            while not result:
+                dslogger.warning(f"重新下载【{title}.mp4】")
+                result = self.download_video(course_info, headers_video, dirpath, title)
+            oldfiles = [file for file in files if f'【{index:0>4d}】' in file and title not in file] #非本堂课程
+            for file in oldfiles:
+                rename_file(dirpath, file, f'【0000】{file[6:]}')
+
+        if f"{title}.html" not in files:
+            self.save_description(course_info, dirpath, title)
 
 
 if __name__ == "__main__":
@@ -445,11 +429,12 @@ if __name__ == "__main__":
     goods_id_all = ds.get_goods_id(goods_url, headers_agent)
     # dslogger.info(goods_id_all.keys())
     no_download = [
-    # '《机器学习》西瓜书训练营【第14期】', '《深度学习》花书训练营【第6期】',
-    # '李航《统计学习方法》训练营第八期', '【超口碑】PyTorch框架班第四期',
-    # '【新班首发】深度学习TensorFlow2.0框架项目班',
-    # '天池KDD大赛指导班',
-    # 'Paper会员体验课', '【NLP经典比赛】疫情期间网民情绪识别大赛】',
+    '《机器学习》西瓜书训练营【第14期】', 
+    # '《深度学习》花书训练营【第6期】',
+    '李航《统计学习方法》训练营第八期', '【超口碑】PyTorch框架班第四期',
+    '【新班首发】深度学习TensorFlow2.0框架项目班',
+    '天池KDD大赛指导班',
+    'Paper会员体验课', '【NLP经典比赛】疫情期间网民情绪识别大赛】',
 
     '【随到随学】李航《统计学习方法》书训练营（含无监督学习部分）',
     '【随到随学】人工智能数学基础训练营', '【重磅升级】Python基础数据科学入门训练营',
@@ -482,7 +467,7 @@ if __name__ == "__main__":
         for ix, course in enumerate(courseslist):
             ix += 1
             dslogger.info(f'【下载({ix}/{num})】{course.get("title")[:20]}...')
-            download_status = ds.download_course(ix, page_api, headers, headers_video, course, dirpath)
+            ds.download_course(ix, page_api, headers, headers_video, course, dirpath)
 
 
         # break
