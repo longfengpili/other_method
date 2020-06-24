@@ -4,3 +4,4 @@ __pycache__
 Untitled.ipynb
 mysetting.py
 *.log
+/deepshare/*.json
