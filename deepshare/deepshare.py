@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-06-24 08:14:53
+# @Last Modified time: 2020-06-24 12:11:43
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -13,7 +13,7 @@ import os
 from bs4 import BeautifulSoup
 import time
 import sqlite3
-import datetime
+from datetime import datetime
 import requests
 from Crypto.Cipher import AES
 import m3u8
@@ -132,18 +132,18 @@ class GetCooikiesFromChrome(object):
 
 class DeepShare(object):
     def __init__(self, app_id):
-        self.courseslist = None
         self.app_id = app_id
-        self.courses_data = self.load_json()
+        self.goods_datas = self.load_json()
 
     def load_json(self):
-        with open('./courses.json', 'rb') as f:
+        with open('./goods.json', 'rb') as f:
             data = json.load(f)
         return data
 
     def dump_json(self):
-        with open('./courses.json', 'w') as f:
-            json.dump(self.courses_data, f)
+        data = dict(sorted(self.goods_datas.items(), key=lambda x: (x[1].get('nodownload_days', 0), x[1].get('courses_num', 0))))
+        with open('./goods.json', 'w', encoding='utf-8') as f:
+            json.dump(data, f)
 
     def create_headers(self, headers):
         '''[summary]
@@ -164,9 +164,9 @@ class DeepShare(object):
         # dslogger.info(headers)
         return headers
 
-    def get_goods_id(self, goods_url, headers_agent):
+    def get_goods_datas(self, goods_url, headers_agent):
         '''[summary]
-        获取所有课程id
+        获取所有课程信息
 
         [description]
 
@@ -177,7 +177,6 @@ class DeepShare(object):
         Returns:
             [dict] -- [所有课程信息]
         '''
-        goods_id_all = {}
         req = requests.get(goods_url, headers=headers_agent)
         soup = BeautifulSoup(req.text, 'lxml')
         results = soup.find_all(class_="hot-item")
@@ -185,14 +184,20 @@ class DeepShare(object):
             try:
                 goods_data = {"page_size":20,"last_id":"","resource_type":[1,2,3,4]}
                 title = result.div.div.string.strip().replace('+', '')
+                url = 'https://ai.deepshare.net' + result['href']
+                goods_data['url'] = url
                 goods_id, goods_type = result['href'].split('/')[2], result['href'].split('/')[3]
                 goods_data['goods_id'] = goods_id
                 goods_data['goods_type'] = int(goods_type) if goods_type else 6
-                # goods_data = json.dumps(goods_data)
-                goods_id_all[title] = goods_data
             except:
                 dslogger.error(result)
-        return goods_id_all
+
+            if title not in self.goods_datas:
+                goods_data['create_ts'] = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
+                self.goods_datas[title] = goods_data
+            else:
+                self.goods_datas[title].update(goods_data)
+        return self.goods_datas
 
     def get_filelist_from_local(self, dirpath):
         files = os.listdir(dirpath)
@@ -222,7 +227,7 @@ class DeepShare(object):
         req = json.loads(req.text)
         return req
 
-    def get_courseslist(self, main_api, headers, data):
+    def get_courseslist_once(self, main_api, headers, data):
         '''[summary]
         获取单个课程的所有课程列表
 
@@ -236,37 +241,49 @@ class DeepShare(object):
         Returns:
             [type] -- [description]
         '''
+        continue_download = False
+        courseslist_once = []
         req = self.get_info_from_api(main_api, headers, data)
+        courses_list = req.get('data').get('goods_list')
+        last_id = req.get('data').get('last_id')
+        goods_id = data.get('goods_id')
+        goods_type = data.get('goods_type')
 
-        if self.courseslist is None:
-            self.courseslist = []
-        last_id = None
-        try:
-            courses_info = req.get('data').get('goods_list')
-            last_id = req.get('data').get('last_id')
-        except Exception as e:
-            dslogger.error(f'{e}\n{req}')
-
-        if courses_info:
-            # courses_info = sorted(courses_info, key=lambda x: x['start_at'])
+        if courses_list:
             selection = ['resource_id', 'resource_type', 'title', 'redirect_url', 'start_at']
-            for course in courses_info:
-                # dslogger.info(course)
-                selection_info = [course.get(key) for key in selection]
-                if selection_info:
-                    course = dict(zip(selection, selection_info))
-                    course['goods_id'] = data.get('goods_id')
-                    course['goods_type'] = data.get('goods_type')
-                    self.courseslist.append(course)
-            if last_id:
-                data['last_id'] = last_id
-                data['order_type'] = 0
-                return self.get_courseslist(main_api, headers, data)
-        if self.courseslist:
-            dslogger.info(f"【last_updated: {self.courseslist[-1].get('start_at')}】This Good have {len(self.courseslist)} courses!")
+            for course in courses_list:
+                course = {key: course.get(key) for key in selection}
+                course['goods_id'] = goods_id
+                course['goods_type'] = goods_type
+                courseslist_once.append(course)
+        if last_id:
+            continue_download = True
+            data['last_id'] = last_id
+            data['order_type'] = 0
+
+        return continue_download, courseslist_once, data
+
+    def get_courseslist(self, main_api, headers, data, title):
+        courseslist = []
+        continue_download, courseslist_once, data = self.get_courseslist_once(main_api, headers, data)
+        courseslist.extend(courseslist_once)
+        while continue_download:
+            continue_download, courseslist_once, data = self.get_courseslist_once(main_api, headers, data)
+            courseslist.extend(courseslist_once)
+        if courseslist:
+            update_ts = courseslist[-1].get('start_at')
+            self.goods_datas[title]['update_ts'] = update_ts
+            courses_num = len(courseslist)
+            self.goods_datas[title]['courses_num'] = courses_num
+            last_course_title = courseslist[-1].get('title')
+            self.goods_datas[title]['last_course_title'] = last_course_title
+            self.goods_datas[title]['nodownload_days'] = 0
+            dslogger.info(f"【last_updated: {update_ts}】This Good have {courses_num} courses!")
         else:
-            dslogger.warning(f"{req}")
-        return self.courseslist
+            nodownload_days = self.goods_datas.get(title).get('nodownload_days', 0)
+            self.goods_datas[title]['nodownload_days'] = nodownload_days + 1
+
+        return courseslist
 
 
     def get_course_info(self, page_api, headers, course):
@@ -290,7 +307,7 @@ class DeepShare(object):
         data['type'] = course.get('goods_type')
         req = self.get_info_from_api(page_api, headers, data)
         course_info = req.get('data')
-        # print(course_info)
+        # dslogger.error(course_info)
         return course_info
 
     def download_video(self, course_info, headers_video, dirpath, title):
@@ -429,55 +446,31 @@ class DeepShare(object):
         if f"{title}.html" not in files:
             self.save_description(course_info, dirpath, title)
 
-
 if __name__ == "__main__":
     ds = DeepShare(app_id)
     headers = ds.create_headers(headers)
-    goods_id_all = ds.get_goods_id(goods_url, headers_agent)
-    # dslogger.info(goods_id_all.keys())
-    no_download = [
-    '《机器学习》西瓜书训练营【第14期】', 
-    # '《深度学习》花书训练营【第6期】',
-    '李航《统计学习方法》训练营第八期', '【超口碑】PyTorch框架班第四期',
-    '【新班首发】深度学习TensorFlow2.0框架项目班',
-    '天池KDD大赛指导班',
-    'Paper会员体验课', '【NLP经典比赛】疫情期间网民情绪识别大赛】',
+    goods_datas = ds.get_goods_datas(goods_url, headers_agent)
+    # dslogger.info(goods_datas)
 
-    '【随到随学】李航《统计学习方法》书训练营（含无监督学习部分）',
-    '【随到随学】人工智能数学基础训练营', '【重磅升级】Python基础数据科学入门训练营',
-    '【随到随学】机器学习算法工程师特训营', '【随到随学】吴恩达《机器学习》作业班',
-    '【随到随学】李航《统计学习方法》书训练营', '【随到随学】《机器学习》西瓜书训练营',
-    '【随到随学】PyTorch框架班', '【随到随学】《深度学习》花书训练营',
-    '【随到随学】李飞飞斯坦福CS231n计算机视觉课', '【随到随学】斯坦福CS224n自然语言处理课训练营',
-    '【随到随学】面试刷题算法强化训练营', '【随到随学】AI大赛实战训练营',
-    '人工智能项目实战班', '【NLP经典比赛】疫情期间网民情绪识别大赛',
-    ]
-    for good in no_download:
-        if good in goods_id_all:
-            goods_id_all.pop(good) #删除已经下载的内容
-        else:
-            dslogger.info(f"{good} not found in mainpage !")
-
-    for title, data in goods_id_all.items():
+    for title, data in goods_datas.items():
+        nodownload_days = data.get('nodownload_days', 0)
+        courses_num = data.get('courses_num', 0)
+        if nodownload_days >= 14 and courses_num >= 10: #14次查询没有更新课程，并且课程大于10
+            continue
         dslogger.info(f"开始下载【{title}】")
-        dirpath = os.path.join('f:/深度之眼/', title)
-        try:
+        dirpath = os.path.join('d:/深度之眼/', title)
+        if not os.path.exists(dirpath):
             os.mkdir(dirpath)
             print(f'{dirpath}已经创建！')
-        except Exception as e:
-            if '当文件已存在时' not in str(e):
-                print(f'【{dirpath}】{e}！')
-
-        ds.courseslist = None #每次重置
-        courseslist = ds.get_courseslist(main_api, headers, data)
-        num = len(courseslist)
+ 
+        courseslist = ds.get_courseslist(main_api, headers, data, title)
         for ix, course in enumerate(courseslist):
-            ix += 1
-            dslogger.info(f'【下载({ix}/{num})】{course.get("title")[:20]}...')
+            # print(course)
+            # break
+            dslogger.info(f'【下载({ix + 1}/{len(courseslist)})】{course.get("title")[:20]}...')
             ds.download_course(ix, page_api, headers, headers_video, course, dirpath)
+        ds.dump_json()
 
-
-        # break
 
     # os.system('shutdown -s -t 60')
 
