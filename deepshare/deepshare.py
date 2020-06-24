@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-06-24 07:36:15
+# @Last Modified time: 2020-06-24 08:06:50
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -48,6 +48,8 @@ dslogger = logging.getLogger('deepshare')
 dslogger.addHandler(handler)
 dslogger.addHandler(handlerfile)
 dslogger.setLevel(logging.DEBUG)
+
+
 
 class GetCooikiesFromChrome(object):
     '''[summary]
@@ -132,6 +134,16 @@ class DeepShare(object):
     def __init__(self, app_id):
         self.courseslist = None
         self.app_id = app_id
+        self.courses_data = self.load_json()
+
+    def load_json(self):
+        with open('./courses.json', 'rb') as f:
+            data = json.load(f)
+        return data
+
+    def dump_json(self):
+        with open('./courses.json', 'w') as f:
+            json.dump(self.courses_data, f)
 
     def create_headers(self, headers):
         '''[summary]
