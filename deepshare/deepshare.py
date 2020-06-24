@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-06-24 20:57:00
+# @Last Modified time: 2020-06-24 20:59:19
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -457,7 +457,7 @@ if __name__ == "__main__":
         courses_num = data.get('courses_num', 0)
         if nodownload_days >= 14 and courses_num >= 10: #14次查询没有更新课程，并且课程大于10
             continue
-        dslogger.info(f"开始下载【{title}】")
+        dslogger.info(f"开始下载【{title}】".center(60, '='))
         dirpath = os.path.join('f:/深度之眼/', title)
         if not os.path.exists(dirpath):
             os.mkdir(dirpath)
