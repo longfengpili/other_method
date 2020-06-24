@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-06-24 12:11:43
+# @Last Modified time: 2020-06-24 20:57:00
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -458,16 +458,17 @@ if __name__ == "__main__":
         if nodownload_days >= 14 and courses_num >= 10: #14次查询没有更新课程，并且课程大于10
             continue
         dslogger.info(f"开始下载【{title}】")
-        dirpath = os.path.join('d:/深度之眼/', title)
+        dirpath = os.path.join('f:/深度之眼/', title)
         if not os.path.exists(dirpath):
             os.mkdir(dirpath)
             print(f'{dirpath}已经创建！')
  
         courseslist = ds.get_courseslist(main_api, headers, data, title)
         for ix, course in enumerate(courseslist):
+            ix += 1
             # print(course)
             # break
-            dslogger.info(f'【下载({ix + 1}/{len(courseslist)})】{course.get("title")[:20]}...')
+            dslogger.info(f'【下载({ix}/{len(courseslist)})】{course.get("title")[:20]}...')
             ds.download_course(ix, page_api, headers, headers_video, course, dirpath)
         ds.dump_json()
 
