@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-06-24 08:06:50
+# @Last Modified time: 2020-06-24 08:14:53
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -216,15 +216,10 @@ class DeepShare(object):
         '''
         data = json.dumps(data)
         params = {'app_id': f'{self.app_id}'}
-        req = None
-        try:
+        req = requests.post(api, headers=headers, params=params, data=data)
+        while req.status_code != 200:
             req = requests.post(api, headers=headers, params=params, data=data)
-            req = json.loads(req.text)
-        except Exception as e:
-            dslogger.error(f'{e}\n{req}')
-            while not req:
-                req = get_info_from_api(api, headers, params, data)
-
+        req = json.loads(req.text)
         return req
 
     def get_courseslist(self, main_api, headers, data):
