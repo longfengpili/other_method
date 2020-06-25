@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-06-25 10:44:30
+# @Last Modified time: 2020-06-25 11:26:22
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -202,9 +202,10 @@ class DeepShare(object):
 
     def get_filelist_from_local(self, dirpath):
         files = os.listdir(dirpath)
-        files = [file[6:] for file in files]
+        files_noix = [file[6:] for file in files]
+        files_nosuffix = [file[:-5] for file in files if file.endswith('.html')]
         # dslogger.info(files)
-        return files
+        return files, files_noix, files_nosuffix
 
     def get_info_from_api(self, api, headers, data):
         '''[summary]
@@ -444,8 +445,7 @@ class DeepShare(object):
             except Exception as e:
                 dslogger.warning(f"{e}")
 
-        files = os.listdir(dirpath)
-        files_noix = self.get_filelist_from_local(dirpath)
+        files, files_noix, files_nosuffix = self.get_filelist_from_local(dirpath)
 
         title_noix = course.get('title', None)
         trips = '<>/\|:"*? +-&,'
@@ -459,7 +459,9 @@ class DeepShare(object):
             raise ValueError(f"{course}")
 
         if f"{title}.html" not in files and f"{title_noix}.mp4" in files_noix:
-            oldfiles = [file for file in files if f'{title_noix}' == file.split('.')[0]]
+            oldfiles = [file for file in files_nosuffix 
+                            if f'{title_noix}' == file or f'{title_noix}' == file + '[empty]']
+            oldfiles = [file for select in oldfiles for file in files if select == file]
             for file in oldfiles:
                 rename_file(dirpath, file, f"{title}.{file.split('.')[-1]}")
 
@@ -468,11 +470,14 @@ class DeepShare(object):
             while not result:
                 dslogger.warning(f"重新下载【{title}.mp4】")
                 result = self.download_video(course_info, headers_video, dirpath, title)
-            oldfiles = [file for file in files if f'【{index:0>4d}】' in file and title != file.split('.')[0]] #非本堂课程
+            oldfiles = [file for file in files_nosuffix if f'【{index:0>4d}】' in file 
+                            and title != file and title != file + '[empty]'] #非本堂课程
+            oldfiles = [file for select in oldfiles for file in files if select == file]
+            # print(title, oldfiles)
             for file in oldfiles:
                 rename_file(dirpath, file, f'【0000】{file[6:]}')
 
-        if f"{title}.html" not in files:
+        if f"{title}.html" not in files and f"{title}[empty].html" not in files:
             self.save_description(course_info, dirpath, title)
 
 if __name__ == "__main__":
