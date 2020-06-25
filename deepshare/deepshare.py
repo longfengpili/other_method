@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-06-24 20:59:19
+# @Last Modified time: 2020-06-25 10:44:30
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -134,6 +134,7 @@ class DeepShare(object):
     def __init__(self, app_id):
         self.app_id = app_id
         self.goods_datas = self.load_json()
+        self.title_info = None # 由于有的章节title一致，故统计数量用于区分
 
     def load_json(self):
         with open('./goods.json', 'rb') as f:
@@ -225,6 +226,10 @@ class DeepShare(object):
         while req.status_code != 200:
             req = requests.post(api, headers=headers, params=params, data=data)
         req = json.loads(req.text)
+
+        if req.get('msg') == '立即登录':
+            raise Exception(f"请先登陆！")
+
         return req
 
     def get_courseslist_once(self, main_api, headers, data):
@@ -241,6 +246,15 @@ class DeepShare(object):
         Returns:
             [type] -- [description]
         '''
+        def convert_title(title):
+            title_count = self.title_info.get(title, 0) + 1
+            self.title_info[title] = title_count
+            title = f"{title}_{title_count:0>2d}" if title_count > 1 else title
+            return title
+
+        if not self.title_info:
+            self.title_info = {}
+
         continue_download = False
         courseslist_once = []
         req = self.get_info_from_api(main_api, headers, data)
@@ -255,6 +269,7 @@ class DeepShare(object):
                 course = {key: course.get(key) for key in selection}
                 course['goods_id'] = goods_id
                 course['goods_type'] = goods_type
+                course['title'] = convert_title(course['title'])
                 courseslist_once.append(course)
         if last_id:
             continue_download = True
@@ -264,6 +279,10 @@ class DeepShare(object):
         return continue_download, courseslist_once, data
 
     def get_courseslist(self, main_api, headers, data, title):
+        nodownload_days = self.goods_datas.get(title).get('nodownload_days', 0)
+        update_ts_last = self.goods_datas.get(title).get('update_ts', '1987-01-01')
+        update_ts = None
+
         courseslist = []
         continue_download, courseslist_once, data = self.get_courseslist_once(main_api, headers, data)
         courseslist.extend(courseslist_once)
@@ -277,11 +296,14 @@ class DeepShare(object):
             self.goods_datas[title]['courses_num'] = courses_num
             last_course_title = courseslist[-1].get('title')
             self.goods_datas[title]['last_course_title'] = last_course_title
-            self.goods_datas[title]['nodownload_days'] = 0
             dslogger.info(f"【last_updated: {update_ts}】This Good have {courses_num} courses!")
+        
+        if not update_ts or update_ts_last == update_ts:
+            nodownload_days += 1
+            self.goods_datas[title]['nodownload_days'] = nodownload_days
+            courseslist = []
         else:
-            nodownload_days = self.goods_datas.get(title).get('nodownload_days', 0)
-            self.goods_datas[title]['nodownload_days'] = nodownload_days + 1
+            self.goods_datas[title]['nodownload_days'] = 0
 
         return courseslist
 
@@ -364,7 +386,7 @@ class DeepShare(object):
         temppath = os.path.join(dirpath, title).replace('/', '\\') #后续用户合并，使用windows命令，必须这样处理
         filepath = temppath + '.mp4'
 
-        url = course_info.get('video_m3u8').replace("http", "https")
+        url = course_info.get('video_m3u8', '').replace("http", "https")
         if not url: return result
 
         all_content = myrequests(url).text  # 获取m3u8文件
@@ -406,6 +428,8 @@ class DeepShare(object):
 
     def save_description(self, course_info, dirpath, title):
         content = course_info.get('content', '')
+        if not content:
+            title = title + '[empty]' 
         with open(f'{dirpath}/{title}.html', 'w', encoding='utf-8') as f:
             f.write(content)
         dslogger.debug(f">>>>>>网页<<<<<<")
@@ -414,23 +438,28 @@ class DeepShare(object):
         def rename_file(dirpath, oldfile, newfile):
             oldfile = os.path.join(dirpath, oldfile)
             newfile = os.path.join(dirpath, newfile)
-            os.rename(oldfile, newfile)
-            dslogger.debug(f"【RENAME】{oldfile} rename to {newfile}")
+            try:
+                os.rename(oldfile, newfile)
+                dslogger.debug(f"【RENAME】{oldfile} rename to {newfile}")
+            except Exception as e:
+                dslogger.warning(f"{e}")
 
         files = os.listdir(dirpath)
         files_noix = self.get_filelist_from_local(dirpath)
-        course_info = self.get_course_info(page_api, headers, course)
-        title_noix = course_info.get('title', None)
+
+        title_noix = course.get('title', None)
         trips = '<>/\|:"*? +-&,'
         for t in trips:
-            title_noix = title_noix.replace(t, '_')
+            title_noix = title_noix.replace(t, '_') 
         title = f"【{index:0>4d}】{title_noix}"
 
-        if not title_noix:
-            raise ValueError(f"{course_info}")
+        course_info = self.get_course_info(page_api, headers, course)
+
+        if not title_noix or not course_info:
+            raise ValueError(f"{course}")
 
         if f"{title}.html" not in files and f"{title_noix}.mp4" in files_noix:
-            oldfiles = [file for file in files if f'{title_noix}' in file]
+            oldfiles = [file for file in files if f'{title_noix}' == file.split('.')[0]]
             for file in oldfiles:
                 rename_file(dirpath, file, f"{title}.{file.split('.')[-1]}")
 
@@ -439,7 +468,7 @@ class DeepShare(object):
             while not result:
                 dslogger.warning(f"重新下载【{title}.mp4】")
                 result = self.download_video(course_info, headers_video, dirpath, title)
-            oldfiles = [file for file in files if f'【{index:0>4d}】' in file and title not in file] #非本堂课程
+            oldfiles = [file for file in files if f'【{index:0>4d}】' in file and title != file.split('.')[0]] #非本堂课程
             for file in oldfiles:
                 rename_file(dirpath, file, f'【0000】{file[6:]}')
 
@@ -453,6 +482,7 @@ if __name__ == "__main__":
     # dslogger.info(goods_datas)
 
     for title, data in goods_datas.items():
+        ds = DeepShare(app_id) # 每次初始化
         nodownload_days = data.get('nodownload_days', 0)
         courses_num = data.get('courses_num', 0)
         if nodownload_days >= 14 and courses_num >= 10: #14次查询没有更新课程，并且课程大于10
@@ -464,6 +494,8 @@ if __name__ == "__main__":
             print(f'{dirpath}已经创建！')
  
         courseslist = ds.get_courseslist(main_api, headers, data, title)
+        # dslogger.error(courseslist)
+        # print(sorted(ds.title_info.items(), key=lambda x: x[1], reverse=True))
         for ix, course in enumerate(courseslist):
             ix += 1
             # print(course)
