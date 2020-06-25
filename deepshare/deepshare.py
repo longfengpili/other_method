@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-06-25 13:29:07
+# @Last Modified time: 2020-06-25 13:44:21
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -142,8 +142,11 @@ class DeepShare(object):
         return data
 
     def dump_json(self):
-        data = dict(sorted(self.goods_datas.items(), 
-                key=lambda x: (x[1].get('nodownload_days', 0), x[1].get('courses_num', 0))))
+        data = sorted(self.goods_datas.items(), 
+                key=lambda x: (x[1].get('nodownload_days', 0), x[1].get('courses_num', 0)))
+        data = sorted(data, key=lambda x: (x[1].get('myupdate_date', '1987-01-01'), 
+                        x[1].get('update_ts', '1987-01-01')), reverse=True)
+        data = dict(data)
         with open('./goods.json', 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False)
 
