@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-06-25 14:48:47
+# @Last Modified time: 2020-06-25 15:06:58
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -293,13 +293,7 @@ class DeepShare(object):
         today = datetime.strftime(date.today(), '%Y-%m-%d')
         self.goods_datas[title]['myupdate_date'] = today
         month_ago = datetime.strftime(date.today() - timedelta(days=30), '%Y-%m-%d')
-        if update_ts_last <= month_ago:
-            dslogger.warning(f"【{title[:20]}...】近一个月没有更新！可设置nodownload_days【值:{nodownload_days}】大于14!!!")
-            if myupdate_date != today:
-                nodownload_days += 2
-                self.goods_datas[title]['nodownload_days'] = nodownload_days
-            return courseslist
-        
+
         continue_download, courseslist_once, data = self.get_courseslist_once(main_api, headers, data)
         courseslist.extend(courseslist_once)
         while continue_download:
@@ -314,9 +308,10 @@ class DeepShare(object):
             self.goods_datas[title]['last_course_title'] = last_course_title
             dslogger.info(f"【last_updated: {update_ts}】This Good have {courses_num} courses!")
         
-        if not update_ts or update_ts_last == update_ts:
+        if update_ts_last == update_ts:
             if myupdate_date != today:
-                nodownload_days += 1
+                count = 2 if update_ts_last <= month_ago and update_ts_last != '1987-01-01' else 1
+                nodownload_days += count
                 self.goods_datas[title]['nodownload_days'] = nodownload_days
             courseslist = []
         else:
@@ -514,14 +509,16 @@ if __name__ == "__main__":
         if nodownload_days >= 14 and courses_num >= 10: #14次查询没有更新课程，并且课程大于10
             continue
         dslogger.info(f"开始下载【{title}】".center(60, '='))
-        dirpath = os.path.join('f:/深度之眼/', title)
-        if not os.path.exists(dirpath):
-            os.mkdir(dirpath)
-            print(f'{dirpath}已经创建！')
  
         courseslist = ds.get_courseslist(main_api, headers, data, title)
         # dslogger.error(courseslist)
         # print(sorted(ds.title_info.items(), key=lambda x: x[1], reverse=True))
+        if courseslist:
+            dirpath = os.path.join('f:/深度之眼/', title)
+            if not os.path.exists(dirpath):
+                os.mkdir(dirpath)
+                print(f'{dirpath}已经创建！')
+        
         for ix, course in enumerate(courseslist):
             ix += 1
             # print(course)
