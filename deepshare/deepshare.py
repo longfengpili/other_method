@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-06-25 12:05:42
+# @Last Modified time: 2020-06-25 13:29:07
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -465,27 +465,32 @@ class DeepShare(object):
         if not title_noix or not course_info:
             raise ValueError(f"{course}")
 
-        if f"{title}.html" not in files and f"{title_noix}.mp4" in files_noix:
-            oldfiles = [file for file in files_nosuffix 
-                            if f'{title_noix}' == file or f'{title_noix}' == file + '[empty]']
-            oldfiles = [file for select in oldfiles for file in files if select == file]
+        if f"{title}.mp4" not in files and f"{title_noix}.mp4" in files_noix:
+            oldfiles = [file for file in files_noix
+                            if file in [f"{title_noix}.html", f"{title_noix}[empty].html", f"{title_noix}.mp4"]]
+            oldfiles = [file for select in oldfiles for file in files 
+                            if select == file[6:] and f"【{index:0>4d}】{select}" != file]
             for file in oldfiles:
-                rename_file(dirpath, file, f"{title}.{file.split('.')[-1]}")
+                newfile = f"{title}.{file.split('.')[-1]}"
+                files.append(newfile)
+                rename_file(dirpath, file, newfile)
 
         if f"{title_noix}.mp4" not in files_noix:
             result = self.download_video(course_info, headers_video, dirpath, title)
             while not result:
                 dslogger.warning(f"重新下载【{title}.mp4】")
                 result = self.download_video(course_info, headers_video, dirpath, title)
-            oldfiles = [file for file in files_nosuffix if f'【{index:0>4d}】' in file 
-                            and title != file and title != file + '[empty]'] #非本堂课程
-            oldfiles = [file for select in oldfiles for file in files if select == file]
-            # print(title, oldfiles)
-            for file in oldfiles:
-                rename_file(dirpath, file, f'【0000】{file[6:]}')
 
         if f"{title}.html" not in files and f"{title}[empty].html" not in files:
             self.save_description(course_info, dirpath, title)
+
+        # 修改非本堂课程
+        oldfiles = [file for file in files_nosuffix 
+                        if f'【{index:0>4d}】' in file and file not in [title, f"{title}[empty]"]]
+        oldfiles = [file for select in oldfiles for file in files 
+                        if file in [f'{select}.html', f'{select}[empty].html', f'{select}.mp4']]
+        for file in oldfiles:
+            rename_file(dirpath, file, f'【0000】{file[6:]}')
 
 if __name__ == "__main__":
     ds = DeepShare(app_id)
