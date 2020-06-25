@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-06-25 13:44:21
+# @Last Modified time: 2020-06-25 14:48:47
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -13,7 +13,7 @@ import os
 from bs4 import BeautifulSoup
 import time
 import sqlite3
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 import requests
 from Crypto.Cipher import AES
 import m3u8
@@ -285,13 +285,21 @@ class DeepShare(object):
         return continue_download, courseslist_once, data
 
     def get_courseslist(self, main_api, headers, data, title):
+        courseslist = []
         nodownload_days = self.goods_datas.get(title).get('nodownload_days', 0)
         update_ts_last = self.goods_datas.get(title).get('update_ts', '1987-01-01')
         myupdate_date = self.goods_datas.get(title).get('myupdate_date', '1987-01-01')
         update_ts = None
         today = datetime.strftime(date.today(), '%Y-%m-%d')
+        self.goods_datas[title]['myupdate_date'] = today
+        month_ago = datetime.strftime(date.today() - timedelta(days=30), '%Y-%m-%d')
+        if update_ts_last <= month_ago:
+            dslogger.warning(f"【{title[:20]}...】近一个月没有更新！可设置nodownload_days【值:{nodownload_days}】大于14!!!")
+            if myupdate_date != today:
+                nodownload_days += 2
+                self.goods_datas[title]['nodownload_days'] = nodownload_days
+            return courseslist
         
-        courseslist = []
         continue_download, courseslist_once, data = self.get_courseslist_once(main_api, headers, data)
         courseslist.extend(courseslist_once)
         while continue_download:
@@ -313,8 +321,6 @@ class DeepShare(object):
             courseslist = []
         else:
             self.goods_datas[title]['nodownload_days'] = 0
-
-        self.goods_datas[title]['myupdate_date'] = today
 
         return courseslist
 
