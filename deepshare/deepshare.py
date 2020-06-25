@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-06-25 11:26:22
+# @Last Modified time: 2020-06-25 12:05:42
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -13,7 +13,7 @@ import os
 from bs4 import BeautifulSoup
 import time
 import sqlite3
-from datetime import datetime
+from datetime import datetime, date
 import requests
 from Crypto.Cipher import AES
 import m3u8
@@ -142,9 +142,10 @@ class DeepShare(object):
         return data
 
     def dump_json(self):
-        data = dict(sorted(self.goods_datas.items(), key=lambda x: (x[1].get('nodownload_days', 0), x[1].get('courses_num', 0))))
+        data = dict(sorted(self.goods_datas.items(), 
+                key=lambda x: (x[1].get('nodownload_days', 0), x[1].get('courses_num', 0))))
         with open('./goods.json', 'w', encoding='utf-8') as f:
-            json.dump(data, f)
+            json.dump(data, f, ensure_ascii=False)
 
     def create_headers(self, headers):
         '''[summary]
@@ -198,6 +199,7 @@ class DeepShare(object):
                 self.goods_datas[title] = goods_data
             else:
                 self.goods_datas[title].update(goods_data)
+        self.dump_json()
         return self.goods_datas
 
     def get_filelist_from_local(self, dirpath):
@@ -282,8 +284,10 @@ class DeepShare(object):
     def get_courseslist(self, main_api, headers, data, title):
         nodownload_days = self.goods_datas.get(title).get('nodownload_days', 0)
         update_ts_last = self.goods_datas.get(title).get('update_ts', '1987-01-01')
+        myupdate_date = self.goods_datas.get(title).get('myupdate_date', '1987-01-01')
         update_ts = None
-
+        today = datetime.strftime(date.today(), '%Y-%m-%d')
+        
         courseslist = []
         continue_download, courseslist_once, data = self.get_courseslist_once(main_api, headers, data)
         courseslist.extend(courseslist_once)
@@ -300,11 +304,14 @@ class DeepShare(object):
             dslogger.info(f"【last_updated: {update_ts}】This Good have {courses_num} courses!")
         
         if not update_ts or update_ts_last == update_ts:
-            nodownload_days += 1
-            self.goods_datas[title]['nodownload_days'] = nodownload_days
+            if myupdate_date != today:
+                nodownload_days += 1
+                self.goods_datas[title]['nodownload_days'] = nodownload_days
             courseslist = []
         else:
             self.goods_datas[title]['nodownload_days'] = 0
+
+        self.goods_datas[title]['myupdate_date'] = today
 
         return courseslist
 
