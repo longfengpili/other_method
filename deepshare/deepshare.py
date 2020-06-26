@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-06-25 15:06:58
+# @Last Modified time: 2020-06-26 11:38:55
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -143,9 +143,8 @@ class DeepShare(object):
 
     def dump_json(self):
         data = sorted(self.goods_datas.items(), 
-                key=lambda x: (x[1].get('nodownload_days', 0), x[1].get('courses_num', 0)))
-        data = sorted(data, key=lambda x: (x[1].get('myupdate_date', '1987-01-01'), 
-                        x[1].get('update_ts', '1987-01-01')), reverse=True)
+                key=lambda x: (-x[1].get('nodownload_days', 0), -x[1].get('courses_num', 0), 
+                    x[1].get('myupdate_date', '1987-01-01'), x[1].get('update_ts', '1987-01-01')), reverse=True)
         data = dict(data)
         with open('./goods.json', 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False)
@@ -452,7 +451,7 @@ class DeepShare(object):
             newfile = os.path.join(dirpath, newfile)
             try:
                 os.rename(oldfile, newfile)
-                dslogger.debug(f"【RENAME】{oldfile} rename to {newfile}")
+                dslogger.debug(f"【RENAME】{os.path.basename(oldfile)} rename to {os.path.basename(newfile)}")
             except Exception as e:
                 dslogger.warning(f"{e}")
 
@@ -502,6 +501,7 @@ if __name__ == "__main__":
     goods_datas = ds.get_goods_datas(goods_url, headers_agent)
     # dslogger.info(goods_datas)
 
+    # 根据json里的数据下载，可以直接在json里配置课程内容
     for title, data in goods_datas.items():
         ds = DeepShare(app_id) # 每次初始化
         nodownload_days = data.get('nodownload_days', 0)
