@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-06-26 11:38:55
+# @Last Modified time: 2020-07-03 07:15:09
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -232,8 +232,11 @@ class DeepShare(object):
             req = requests.post(api, headers=headers, params=params, data=data)
         req = json.loads(req.text)
 
-        if req.get('msg') == '立即登录':
-            raise Exception(f"请先登陆！")
+        if req.get('msg') == '用户没有登录':
+            raise Exception(f"请先登录！")
+        
+        if not req.get('data'):
+            raise Exception(f"{req}")
 
         return req
 
@@ -362,6 +365,7 @@ class DeepShare(object):
             try_times = 0
             req = requests.get(url, headers=headers, timeout=60)
             while req.status_code != 200 and try_times < times:
+                dslogger.warning(f"request 【{url}】 error")
                 req = requests.get(url, headers=headers, timeout=60)
                 try_times += 1
             if req.status_code != 200:
@@ -508,7 +512,7 @@ if __name__ == "__main__":
         courses_num = data.get('courses_num', 0)
         if nodownload_days >= 14 and courses_num >= 10: #14次查询没有更新课程，并且课程大于10
             continue
-        dslogger.info(f"开始下载【{title}】".center(60, '='))
+        dslogger.info(f"开始下载【{title}】".center(50, '='))
  
         courseslist = ds.get_courseslist(main_api, headers, data, title)
         # dslogger.error(courseslist)
