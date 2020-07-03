@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-06-26 11:38:55
+# @Last Modified time: 2020-06-29 10:28:22
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -513,6 +513,9 @@ if __name__ == "__main__":
         courseslist = ds.get_courseslist(main_api, headers, data, title)
         # dslogger.error(courseslist)
         # print(sorted(ds.title_info.items(), key=lambda x: x[1], reverse=True))
+        
+        ds.dump_json()
+        continue
         if courseslist:
             dirpath = os.path.join('f:/深度之眼/', title)
             if not os.path.exists(dirpath):
@@ -525,8 +528,7 @@ if __name__ == "__main__":
             # break
             dslogger.info(f'【下载({ix}/{len(courseslist)})】{course.get("title")[:20]}...')
             ds.download_course(ix, page_api, headers, headers_video, course, dirpath)
-        ds.dump_json()
-
+        # ds.dump_json()
 
     # os.system('shutdown -s -t 60')
 
