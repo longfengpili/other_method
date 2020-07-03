@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-07-03 07:15:09
+# @Last Modified time: 2020-07-03 08:09:14
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -310,7 +310,7 @@ class DeepShare(object):
             self.goods_datas[title]['last_course_title'] = last_course_title
             dslogger.info(f"【last_updated: {update_ts}】This Good have {courses_num} courses!")
         
-        if update_ts_last == update_ts:
+        if update_ts_last == update_ts: #判断有没有新课程
             if myupdate_date != today:
                 count = 2 if update_ts_last <= month_ago and update_ts_last != '1987-01-01' else 1
                 nodownload_days += count
