@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-07-03 08:09:14
+# @Last Modified time: 2020-07-04 09:09:32
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -361,15 +361,20 @@ class DeepShare(object):
         Returns:
             [type] -- [description]
         '''
-        def myrequests(url, headers=headers_video, times=20):
+        def myrequests(url, headers=headers_video):
             try_times = 0
-            req = requests.get(url, headers=headers, timeout=60)
-            while req.status_code != 200 and try_times < times:
-                dslogger.warning(f"request 【{url}】 error")
-                req = requests.get(url, headers=headers, timeout=60)
-                try_times += 1
-            if req.status_code != 200:
-                raise ValueError(f"request error ! 【{try_times}】{url}")
+            try:
+                req = requests.get(url, headers=headers, timeout=60)    
+            except Exception as e:
+                dslogger.warning(f"request 【{url}】 error, re request")
+                time.sleep(1)
+                req = myrequests(url, headers=headers)
+
+            while req.status_code != 200:
+                dslogger.warning(f"request 【{url}】 error, re request")
+                time.sleep(1)
+                req = myrequests(url, headers=headers)
+            
             return req
 
         def download_ts(id, segment):
