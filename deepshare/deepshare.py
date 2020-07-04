@@ -1,7 +1,11 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-07-04 09:09:32
+<<<<<<< HEAD
+# @Last Modified time: 2020-07-04 12:21:17
+=======
+# @Last Modified time: 2020-06-29 10:28:22
+>>>>>>> 9eb2982ff6a787ff837c659d1a8dc2455cbdc356
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -232,11 +236,8 @@ class DeepShare(object):
             req = requests.post(api, headers=headers, params=params, data=data)
         req = json.loads(req.text)
 
-        if req.get('msg') == '用户没有登录':
-            raise Exception(f"请先登录！")
-        
-        if not req.get('data'):
-            raise Exception(f"{req}")
+        if req.get('msg') == '立即登录':
+            raise Exception(f"请先登陆！")
 
         return req
 
@@ -310,7 +311,7 @@ class DeepShare(object):
             self.goods_datas[title]['last_course_title'] = last_course_title
             dslogger.info(f"【last_updated: {update_ts}】This Good have {courses_num} courses!")
         
-        if update_ts_last == update_ts: #判断有没有新课程
+        if update_ts_last == update_ts:
             if myupdate_date != today:
                 count = 2 if update_ts_last <= month_ago and update_ts_last != '1987-01-01' else 1
                 nodownload_days += count
@@ -362,7 +363,6 @@ class DeepShare(object):
             [type] -- [description]
         '''
         def myrequests(url, headers=headers_video):
-            try_times = 0
             try:
                 req = requests.get(url, headers=headers, timeout=60)    
             except Exception as e:
@@ -374,7 +374,6 @@ class DeepShare(object):
                 dslogger.warning(f"request 【{url}】 error, re request")
                 time.sleep(1)
                 req = myrequests(url, headers=headers)
-            
             return req
 
         def download_ts(id, segment):
@@ -517,7 +516,7 @@ if __name__ == "__main__":
         courses_num = data.get('courses_num', 0)
         if nodownload_days >= 14 and courses_num >= 10: #14次查询没有更新课程，并且课程大于10
             continue
-        dslogger.info(f"开始下载【{title}】".center(50, '='))
+        dslogger.info(f"开始下载【{title}】".center(60, '='))
  
         courseslist = ds.get_courseslist(main_api, headers, data, title)
         # dslogger.error(courseslist)
@@ -535,7 +534,6 @@ if __name__ == "__main__":
             dslogger.info(f'【下载({ix}/{len(courseslist)})】{course.get("title")[:20]}...')
             ds.download_course(ix, page_api, headers, headers_video, course, dirpath)
         ds.dump_json()
-
 
     # os.system('shutdown -s -t 60')
 
