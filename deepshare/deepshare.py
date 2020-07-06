@@ -1,11 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-<<<<<<< HEAD
-# @Last Modified time: 2020-07-04 12:21:17
-=======
-# @Last Modified time: 2020-06-29 10:28:22
->>>>>>> 9eb2982ff6a787ff837c659d1a8dc2455cbdc356
+# @Last Modified time: 2020-07-06 21:33:21
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -236,8 +232,11 @@ class DeepShare(object):
             req = requests.post(api, headers=headers, params=params, data=data)
         req = json.loads(req.text)
 
-        if req.get('msg') == '立即登录':
-            raise Exception(f"请先登陆！")
+        if req.get('msg') == '用户没有登录':
+            raise Exception(f"请先登录！")
+        
+        if not req.get('data'):
+            raise Exception(f"{req}")
 
         return req
 
