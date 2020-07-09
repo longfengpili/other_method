@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-07-06 21:33:21
+# @Last Modified time: 2020-07-10 07:51:06
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -289,9 +289,11 @@ class DeepShare(object):
     def get_courseslist(self, main_api, headers, data, title):
         courseslist = []
         nodownload_days = self.goods_datas.get(title).get('nodownload_days', 0)
+        download_courses = self.goods_datas.get(title).get('courses_num', 0)
         update_ts_last = self.goods_datas.get(title).get('update_ts', '1987-01-01')
         myupdate_date = self.goods_datas.get(title).get('myupdate_date', '1987-01-01')
         update_ts = None
+        courses_num = None
         today = datetime.strftime(date.today(), '%Y-%m-%d')
         self.goods_datas[title]['myupdate_date'] = today
         month_ago = datetime.strftime(date.today() - timedelta(days=30), '%Y-%m-%d')
@@ -308,13 +310,14 @@ class DeepShare(object):
             self.goods_datas[title]['courses_num'] = courses_num
             last_course_title = courseslist[-1].get('title')
             self.goods_datas[title]['last_course_title'] = last_course_title
-            dslogger.info(f"【last_updated: {update_ts}】This Good have {courses_num} courses!")
+            dslogger.warning(f"【last_updated: {update_ts}】This Good have {courses_num} courses!")
         
-        if update_ts_last == update_ts:
+        if update_ts_last == update_ts and download_courses == courses_num:
             if myupdate_date != today:
                 count = 2 if update_ts_last <= month_ago and update_ts_last != '1987-01-01' else 1
                 nodownload_days += count
                 self.goods_datas[title]['nodownload_days'] = nodownload_days
+                dslogger.info(f"【last_updated: {myupdate_date}】, This time not update, nodownload_days: {nodownload_days}!")
             courseslist = []
         else:
             self.goods_datas[title]['nodownload_days'] = 0
