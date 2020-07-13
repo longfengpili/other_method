@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-07-10 07:51:06
+# @Last Modified time: 2020-07-14 07:36:59
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -395,9 +395,13 @@ class DeepShare(object):
             res = myrequests(url).content #获取视频内容
             # dslogger.debug(f"{key_method}, {key}, {key_iv}")
             if key:  # AES 解密
-                cryptor = AES.new(key, AES.MODE_CBC, key_iv)
-                with open(file_tmp, 'wb') as f:
-                    f.write(cryptor.decrypt(res))
+                try:
+                    cryptor = AES.new(key, AES.MODE_CBC, key_iv)
+                    with open(file_tmp, 'wb') as f:
+                        f.write(cryptor.decrypt(res))
+                except Exception as e:
+                    dslogger.error(f"{e}, segment: {segment}")
+                    download_ts(id, segment)
             else:
                 with open(file_tmp, 'wb') as f:
                     f.write(res)
