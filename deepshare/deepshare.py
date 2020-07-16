@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-07-14 07:36:59
+# @Last Modified time: 2020-07-17 07:17:29
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -468,6 +468,9 @@ class DeepShare(object):
                 dslogger.debug(f"【RENAME】{os.path.basename(oldfile)} rename to {os.path.basename(newfile)}")
             except Exception as e:
                 dslogger.warning(f"{e}")
+                if '文件已存在' in str(e):
+                    os.remove(newfile)
+                    rename_file('', oldfile, newfile)
 
         files, files_noix, files_nosuffix = self.get_filelist_from_local(dirpath)
 
