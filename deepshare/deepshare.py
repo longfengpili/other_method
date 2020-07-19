@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   longf
-# @Last Modified time: 2020-07-17 07:17:29
+# @Last Modified time: 2020-07-19 20:00:42
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -207,7 +207,7 @@ class DeepShare(object):
     def get_filelist_from_local(self, dirpath):
         files = os.listdir(dirpath)
         files_noix = [file[6:] for file in files]
-        files_nosuffix = [file[:-5] for file in files if file.endswith('.html')]
+        files_nosuffix = [file[:-5].replace('[empty]', '') for file in files if file.endswith('.html')]
         # dslogger.info(files)
         return files, files_noix, files_nosuffix
 
