@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
-# @Last Modified by:   longf
-# @Last Modified time: 2020-07-19 20:00:42
+# @Last Modified by:   Administrator
+# @Last Modified time: 2020-08-09 10:04:07
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -232,7 +232,7 @@ class DeepShare(object):
             req = requests.post(api, headers=headers, params=params, data=data)
         req = json.loads(req.text)
 
-        if req.get('msg') == '用户没有登录':
+        if req.get('msg') in ('用户没有登录', '立即登录'):
             raise Exception(f"请先登录！")
         
         if not req.get('data'):
@@ -266,6 +266,7 @@ class DeepShare(object):
         continue_download = False
         courseslist_once = []
         req = self.get_info_from_api(main_api, headers, data)
+        # print(req)
         courses_list = req.get('data').get('goods_list')
         last_id = req.get('data').get('last_id')
         goods_id = data.get('goods_id')
@@ -528,13 +529,14 @@ if __name__ == "__main__":
         dslogger.info(f"开始下载【{title}】".center(60, '='))
  
         courseslist = ds.get_courseslist(main_api, headers, data, title)
-        # dslogger.error(courseslist)
         # print(sorted(ds.title_info.items(), key=lambda x: x[1], reverse=True))
         if courseslist:
-            dirpath = os.path.join('f:/深度之眼/', title)
+            dirpath = os.path.join('e:/深度之眼/', title)
             if not os.path.exists(dirpath):
                 os.mkdir(dirpath)
                 print(f'{dirpath}已经创建！')
+        else:
+            dslogger.error(courseslist)
         
         for ix, course in enumerate(courseslist):
             ix += 1
