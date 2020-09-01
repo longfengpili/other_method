@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   Administrator
-# @Last Modified time: 2020-08-09 10:04:07
+# @Last Modified time: 2020-09-01 16:38:49
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -367,14 +367,14 @@ class DeepShare(object):
         '''
         def myrequests(url, headers=headers_video):
             try:
-                req = requests.get(url, headers=headers, timeout=60)    
+                req = requests.get(url, headers=headers, timeout=60) 
             except Exception as e:
-                dslogger.warning(f"request 【{url}】 error, re request")
-                time.sleep(1)
+                dslogger.warning(f"request 【{url}】 error, re request, error: {str(e)}")
+                time.sleep(3)
                 req = myrequests(url, headers=headers)
 
             while req.status_code != 200:
-                dslogger.warning(f"request 【{url}】 error, re request")
+                dslogger.warning(f"【{req.status_code}】request 【{url}】 error, re request")
                 time.sleep(1)
                 req = myrequests(url, headers=headers)
             return req
@@ -383,6 +383,7 @@ class DeepShare(object):
             '''
             temppath/url_prefix 来自上一层函数
             '''
+            # dslogger.warning(f"segment: {segment}")
             file_tmp = os.path.join(temppath, f"{id:0>4d}.ts")
             try:
                 key_method = segment.get('key').get('method')
@@ -411,11 +412,12 @@ class DeepShare(object):
         st = time.time()
         temppath = os.path.join(dirpath, title).replace('/', '\\') #后续用户合并，使用windows命令，必须这样处理
         filepath = temppath + '.mp4'
-
+        # dslogger.info(course_info)
         url = course_info.get('video_m3u8', '').replace("http", "https")
         if not url: return result
-
         all_content = myrequests(url).text  # 获取m3u8文件
+        # dslogger.info(f"{all_content}")
+        # dslogger.info(url)
         if "#EXTM3U" not in all_content:
             raise BaseException("非M3U8的链接")
 
@@ -431,7 +433,7 @@ class DeepShare(object):
             os.mkdir(temppath)
 
         # 读线程下载ts
-        url_prefix = url.split('v.f230')[0]
+        url_prefix = url.split('drm')[0] + 'drm/'
         segments_num = len(segments)
         # dslogger.info(f"The course have {segments_num} ts！")
         with ThreadPoolExecutor(max_workers=60) as threadpool:
@@ -524,7 +526,7 @@ if __name__ == "__main__":
         ds = DeepShare(app_id) # 每次初始化
         nodownload_days = data.get('nodownload_days', 0)
         courses_num = data.get('courses_num', 0)
-        if nodownload_days >= 14 and courses_num >= 10: #14次查询没有更新课程，并且课程大于10
+        if nodownload_days >= 30:  #and courses_num >= 10: #14次查询没有更新课程，并且课程大于10
             continue
         dslogger.info(f"开始下载【{title}】".center(60, '='))
  
