@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   Administrator
-# @Last Modified time: 2020-09-01 16:38:49
+# @Last Modified time: 2020-09-11 07:22:59
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -314,12 +314,12 @@ class DeepShare(object):
             dslogger.warning(f"【last_updated: {update_ts}】This Good have {courses_num} courses!")
         
         if update_ts_last == update_ts and download_courses == courses_num:
+            courseslist = [] # 如果没有新课程，返回空
             if myupdate_date != today:
                 count = 2 if update_ts_last <= month_ago and update_ts_last != '1987-01-01' else 1
                 nodownload_days += count
                 self.goods_datas[title]['nodownload_days'] = nodownload_days
                 dslogger.info(f"【last_updated: {myupdate_date}】, This time not update, nodownload_days: {nodownload_days}!")
-            courseslist = []
         else:
             self.goods_datas[title]['nodownload_days'] = 0
 
@@ -433,7 +433,7 @@ class DeepShare(object):
             os.mkdir(temppath)
 
         # 读线程下载ts
-        url_prefix = url.split('drm')[0] + 'drm/'
+        url_prefix = url.split('drm')[0] + 'drm/' if 'drm/' in url else url.split('v.f')[0]
         segments_num = len(segments)
         # dslogger.info(f"The course have {segments_num} ts！")
         with ThreadPoolExecutor(max_workers=60) as threadpool:
