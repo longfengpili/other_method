@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   Administrator
-# @Last Modified time: 2020-09-11 07:22:59
+# @Last Modified time: 2020-10-14 21:01:14
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -533,6 +533,9 @@ if __name__ == "__main__":
         courseslist = ds.get_courseslist(main_api, headers, data, title)
         # print(sorted(ds.title_info.items(), key=lambda x: x[1], reverse=True))
         if courseslist:
+            trips = '<>/\|:"*? +-&,'
+            for t in trips:
+                title = title.replace(t, '_') 
             dirpath = os.path.join('e:/深度之眼/', title)
             if not os.path.exists(dirpath):
                 os.mkdir(dirpath)
