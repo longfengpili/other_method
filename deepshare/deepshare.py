@@ -1,12 +1,11 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   Administrator
-# @Last Modified time: 2020-10-14 21:01:14
+# @Last Modified time: 2020-10-22 06:33:10
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import requests
 from mysetting import *
 import json
 import os
@@ -49,6 +48,8 @@ dslogger.addHandler(handler)
 dslogger.addHandler(handlerfile)
 dslogger.setLevel(logging.DEBUG)
 
+VERIFY = False  # 屏蔽SSL验证
+requests.packages.urllib3.disable_warnings()  # 去掉警告
 
 
 class GetCooikiesFromChrome(object):
@@ -181,7 +182,7 @@ class DeepShare(object):
         Returns:
             [dict] -- [所有课程信息]
         '''
-        req = requests.get(goods_url, headers=headers_agent)
+        req = requests.get(goods_url, headers=headers_agent, verify=VERIFY)
         soup = BeautifulSoup(req.text, 'lxml')
         results = soup.find_all(class_="hot-item")
         for result in results:
@@ -227,9 +228,9 @@ class DeepShare(object):
         '''
         data = json.dumps(data)
         params = {'app_id': f'{self.app_id}'}
-        req = requests.post(api, headers=headers, params=params, data=data)
+        req = requests.post(api, headers=headers, params=params, data=data, verify=VERIFY)
         while req.status_code != 200:
-            req = requests.post(api, headers=headers, params=params, data=data)
+            req = requests.post(api, headers=headers, params=params, data=data, verify=VERIFY)
         req = json.loads(req.text)
 
         if req.get('msg') in ('用户没有登录', '立即登录'):
@@ -367,7 +368,7 @@ class DeepShare(object):
         '''
         def myrequests(url, headers=headers_video):
             try:
-                req = requests.get(url, headers=headers, timeout=60) 
+                req = requests.get(url, headers=headers, timeout=60, verify=VERIFY) 
             except Exception as e:
                 dslogger.warning(f"request 【{url}】 error, re request, error: {str(e)}")
                 time.sleep(3)
