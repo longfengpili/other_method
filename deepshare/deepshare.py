@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   Administrator
-# @Last Modified time: 2020-10-22 06:33:10
+# @Last Modified time: 2020-12-01 21:26:22
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -48,7 +48,7 @@ dslogger.addHandler(handler)
 dslogger.addHandler(handlerfile)
 dslogger.setLevel(logging.DEBUG)
 
-VERIFY = False  # 屏蔽SSL验证
+VERIFY = True  # 屏蔽SSL验证
 requests.packages.urllib3.disable_warnings()  # 去掉警告
 
 
@@ -187,7 +187,7 @@ class DeepShare(object):
         results = soup.find_all(class_="hot-item")
         for result in results:
             try:
-                goods_data = {"page_size":20,"last_id":"","resource_type":[1,2,3,4]}
+                goods_data = {"page_size":20,"last_id":"","resource_type":[1,2,3,4,20]}
                 title = result.div.div.string.strip().replace('+', '')
                 url = 'https://ai.deepshare.net' + result['href']
                 goods_data['url'] = url
@@ -348,6 +348,7 @@ class DeepShare(object):
         data['type'] = course.get('goods_type')
         req = self.get_info_from_api(page_api, headers, data)
         course_info = req.get('data')
+        course_info['courseurl'] = f"https://ai.deepshare.net{course.get('redirect_url')}?from={course.get('resource_id')}&type={course.get('resource_type')}"
         # dslogger.error(course_info)
         return course_info
 
@@ -457,13 +458,18 @@ class DeepShare(object):
 
     def save_description(self, course_info, dirpath, title):
         content = course_info.get('content', '')
+        courseurl = course_info.get('courseurl')
+        # print(course_info)
         if not content:
-            title = title + '[empty]' 
+            title = title + '[empty]'
+        # print(title, content)
+        content = f"<div><a href={courseurl}>{courseurl}<a><div>{content}"
         with open(f'{dirpath}/{title}.html', 'w', encoding='utf-8') as f:
             f.write(content)
         dslogger.debug(f">>>>>>网页<<<<<<")
 
     def download_course(self, index, page_api, headers, headers_video, course, dirpath):
+        # print(course)
         def rename_file(dirpath, oldfile, newfile):
             oldfile = os.path.join(dirpath, oldfile)
             newfile = os.path.join(dirpath, newfile)
