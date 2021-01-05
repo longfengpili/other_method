@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
-# @Last Modified by:   Administrator
-# @Last Modified time: 2020-12-01 21:26:22
+# @Last Modified by:   longf
+# @Last Modified time: 2020-12-06 10:07:45
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -543,7 +543,7 @@ if __name__ == "__main__":
             trips = '<>/\|:"*? +-&,'
             for t in trips:
                 title = title.replace(t, '_') 
-            dirpath = os.path.join('e:/深度之眼/', title)
+            dirpath = os.path.join('f:/深度之眼/', title)
             if not os.path.exists(dirpath):
                 os.mkdir(dirpath)
                 print(f'{dirpath}已经创建！')
