@@ -1,0 +1,5 @@
+pycryptodome
+cryptography
+m3u8
+colorlog
+tqdm
