@@ -2,7 +2,7 @@
 # @Author: chunyang.xu
 # @Date:   2022-01-05 07:02:14
 # @Last Modified by:   chunyang.xu
-# @Last Modified time: 2022-01-06 08:40:45
+# @Last Modified time: 2022-01-06 08:46:47
 
 
 import os
@@ -122,8 +122,9 @@ class Tableau:
                 key_url = segment.get('key').get('uri')
                 key = myrequests(key_url).content
                 key_iv = segment.get('key').get('iv')
-                print(key)
-                key_iv = key_iv.replace("0x", "")[:16].encode()  # 偏移码
+                print(key_iv)
+                # key_iv = key_iv.replace("0x", "")[:16].encode()  # 偏移码
+                key_iv = '0000000000000000'.encode()
             except:
                 key = None
             
@@ -131,7 +132,7 @@ class Tableau:
             res = myrequests(url).content  # 获取视频内容
             if key:  # AES 解密
                 try:
-                    cryptor = AES.new(key, AES.MODE_CBC, key)
+                    cryptor = AES.new(key, AES.MODE_CBC, key_iv)
                     with open(file_tmp, 'wb') as f:
                         f.write(cryptor.decrypt(res))
                 except Exception as e:
