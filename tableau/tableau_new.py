@@ -2,7 +2,7 @@
 # @Author: chunyang.xu
 # @Date:   2022-01-05 07:02:14
 # @Last Modified by:   chunyang.xu
-# @Last Modified time: 2022-01-06 22:05:31
+# @Last Modified time: 2022-01-06 22:16:20
 
 
 import os
@@ -163,15 +163,15 @@ class Tableau:
         with ThreadPoolExecutor(max_workers=60) as threadpool:
             list(tqdm(threadpool.map(download_ts, [url_prefix]*segments_num, range(segments_num), 
                       segments, [temppath]*segments_num),
-                 total=segments_num, ncols=80, desc="[视频下载]"))
+                 total=segments_num, ncols=80, desc=f"[{title}]"))
 
         # 合并并删除临时文件夹
         temppath = temppath.replace('/', '\\')  # 后续用户合并，使用windows命令，必须这样处理
-        filepath = os.path.join(TARGETPATH, f'{title}.mp4')
-        subresult = subprocess.run(["copy", "/b", f"{os.path.join(temppath, '*.ts')}", f"{filepath}"],
+        targetpath = os.path.join(TARGETPATH, f'{title}.mp4')
+        subresult = subprocess.run(["copy", "/b", f"{os.path.join(temppath, '*.ts')}", f"{targetpath}"],
                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 
-        if not os.path.isfile(filepath):
+        if not os.path.isfile(targetpath):
             print(f"stdin: {subresult.args}, stderr: {subresult.stderr}")
         else:
             shutil.rmtree(temppath)
@@ -180,11 +180,23 @@ class Tableau:
         self.download_html(pageinfo)
         self.download_video(pageinfo)
 
+    def download_by_course(self, course):
+        courseinfo = self.get_courseinfo(course)
+        if not courseinfo:
+            return
+
+        pageinfo = self.get_pageinfo(courseinfo[0])
+
+        title = pageinfo.get('title')
+        targetpath = os.path.join(TARGETPATH, f'{title}.mp4')
+        if not os.path.exists(targetpath):
+            self.download(pageinfo)
+        else:
+            print(f"{targetpath} already exists")
+
 
 if __name__ == '__main__':
     tableau = Tableau(APP_ID, DOMAIN, HEADERS, COURSESAPI, COURSEAPI)
     courseslist = tableau.get_courseslist()
-    course = courseslist[1]
-    courseinfo = tableau.get_courseinfo(course)
-    pageinfo = tableau.get_pageinfo(courseinfo[0])
-    tableau.download(pageinfo)
+    for course in courseslist:
+        courseinfo = tableau.download_by_course(course)
