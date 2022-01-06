@@ -2,7 +2,7 @@
 # @Author: chunyang.xu
 # @Date:   2022-01-05 07:03:17
 # @Last Modified by:   chunyang.xu
-# @Last Modified time: 2022-01-05 08:25:33
+# @Last Modified time: 2022-01-06 08:03:30
 
 
 import os
@@ -11,7 +11,6 @@ import json
 import base64
 import sqlite3
 
-from Crypto.Cipher import AES
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
@@ -86,7 +85,6 @@ class GetCooikiesFromChrome(object):
 
         cookie = ''
         for row in cur:
-            print(row['name'])
             if row['value'] is not None:
                 name = row['name']
                 value = self.chrome_decrypt(row['value'])

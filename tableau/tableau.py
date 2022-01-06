@@ -1,7 +1,7 @@
 # @Author: chunyang.xu
 # @Date:   2020-05-10 07:36:24
 # @Last Modified by:   chunyang.xu
-# @Last Modified time: 2022-01-05 07:01:15
+# @Last Modified time: 2022-01-06 08:26:58
 
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
@@ -110,7 +110,7 @@ class GetCooikiesFromChrome(object):
 
     def get(self, domain):
         sql = f'SELECT name, encrypted_value as value FROM cookies where host_key like "%{domain}%"'
-        filename = os.path.join(os.environ['USERPROFILE'], r'AppData\Local\Google\Chrome\User Data\default\Network\Cookies')
+        filename = os.path.join(os.environ['USERPROFILE'], r'AppData\Local\Google\Chrome\User Data\default\Cookies')
         con = sqlite3.connect(filename)
         con.row_factory = sqlite3.Row
         cur = con.cursor()
@@ -125,7 +125,6 @@ class GetCooikiesFromChrome(object):
                     cookie += name + '=' + value + ';'
         con.close()
         cookie = cookie.encode('utf-8')
-        print(cookie)
         if not cookie:
             raise f"cookie is not exist! {cookie}"
         return cookie
@@ -135,7 +134,21 @@ class GetCooikiesFromChrome(object):
 class DeepShare(object):
     def __init__(self, app_id):
         self.app_id = app_id
+        self.goods_datas = self.load_json()
         self.title_info = None # 由于有的章节title一致，故统计数量用于区分
+
+    def load_json(self):
+        with open('./goods.json', 'rb') as f:
+            data = json.load(f)
+        return data
+
+    def dump_json(self):
+        data = sorted(self.goods_datas.items(), 
+                key=lambda x: (-x[1].get('nodownload_days', 0), -x[1].get('courses_num', 0), 
+                    x[1].get('myupdate_date', '1987-01-01'), x[1].get('update_ts', '1987-01-01')), reverse=True)
+        data = dict(data)
+        with open('./goods.json', 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False)
 
     def create_headers(self, headers):
         '''[summary]
@@ -149,12 +162,84 @@ class DeepShare(object):
             [dict] -- [带cookies的headers]
         '''
         get_cookies = GetCooikiesFromChrome()
-        cookie = get_cookies.get('appkmawugcq3660.pc.xiaoe-tech.com')
+        cookie = get_cookies.get('ai.deepshare.net')
         if not cookie:
             dslogger.warning('please login')
         headers['Cookie'] = cookie
         # dslogger.info(headers)
         return headers
+
+    def get_goods_datas(self, goods_url, headers_agent):
+        '''[summary]
+        获取所有课程信息
+
+        [description]
+
+        Arguments:
+            goods_url {[str]} -- [课程总展示页面]
+            headers_agent {[dict]} -- [只带有user_agent的headers]
+
+        Returns:
+            [dict] -- [所有课程信息]
+        '''
+        req = requests.get(goods_url, headers=headers_agent, verify=VERIFY)
+        soup = BeautifulSoup(req.text, 'lxml')
+        results = soup.find_all(class_="hot-item")
+        for result in results:
+            try:
+                goods_data = {"page_size":20,"last_id":"","resource_type":[1,2,3,4,20]}
+                title = result.div.div.string.strip().replace('+', '')
+                url = 'https://ai.deepshare.net' + result['href']
+                goods_data['url'] = url
+                goods_id, goods_type = result['href'].split('/')[2], result['href'].split('/')[3]
+                goods_data['goods_id'] = goods_id
+                goods_data['goods_type'] = int(goods_type) if goods_type else 6
+            except:
+                dslogger.error(result)
+
+            if title not in self.goods_datas:
+                goods_data['create_ts'] = datetime.strftime(datetime.now(), '%Y-%m-%d %H:%M:%S')
+                self.goods_datas[title] = goods_data
+            else:
+                self.goods_datas[title].update(goods_data)
+        self.dump_json()
+        return self.goods_datas
+
+    def get_filelist_from_local(self, dirpath):
+        files = os.listdir(dirpath)
+        files_noix = [file[6:] for file in files]
+        files_nosuffix = [file[:-5].replace('[empty]', '') for file in files if file.endswith('.html')]
+        # dslogger.info(files)
+        return files, files_noix, files_nosuffix
+
+    def get_info_from_api(self, api, headers, data):
+        '''[summary]
+        通过API获取单个课程信息 method:POST
+        [description]
+
+        Arguments:
+            api {[str]} -- [api url]
+            headers {[dict]} -- [cookies headers]
+            params {[dict]} -- [requests params]
+            data {[dict]} -- [requests POST data]
+
+        Returns:
+            [dict] -- [课程信息]
+        '''
+        data = json.dumps(data)
+        params = {'app_id': f'{self.app_id}'}
+        req = requests.post(api, headers=headers, params=params, data=data, verify=VERIFY)
+        while req.status_code != 200:
+            req = requests.post(api, headers=headers, params=params, data=data, verify=VERIFY)
+        req = json.loads(req.text)
+
+        if req.get('msg') in ('用户没有登录', '立即登录'):
+            raise Exception(f"请先登录！")
+        
+        if not req.get('data'):
+            raise Exception(f"{req}")
+
+        return req
 
     def get_courseslist_once(self, main_api, headers, data):
         '''[summary]
@@ -263,7 +348,7 @@ class DeepShare(object):
         data['type'] = course.get('goods_type')
         req = self.get_info_from_api(page_api, headers, data)
         course_info = req.get('data')
-        course_info['courseurl'] = f"https://appkmawugcq3660.pc.xiaoe-tech.com{course.get('redirect_url')}?from={course.get('resource_id')}&type={course.get('resource_type')}"
+        course_info['courseurl'] = f"https://ai.deepshare.net{course.get('redirect_url')}?from={course.get('resource_id')}&type={course.get('resource_type')}"
         # dslogger.error(course_info)
         return course_info
 
@@ -458,7 +543,7 @@ if __name__ == "__main__":
             trips = '<>/\|:"*? +-&,'
             for t in trips:
                 title = title.replace(t, '_') 
-            dirpath = os.path.join('f:/深度之眼/tableau', title)
+            dirpath = os.path.join('f:/深度之眼/', title)
             if not os.path.exists(dirpath):
                 os.mkdir(dirpath)
                 print(f'{dirpath}已经创建！')
