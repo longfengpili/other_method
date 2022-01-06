@@ -2,7 +2,7 @@
 # @Author: chunyang.xu
 # @Date:   2022-01-04 20:47:41
 # @Last Modified by:   chunyang.xu
-# @Last Modified time: 2022-01-06 08:41:47
+# @Last Modified time: 2022-01-06 22:05:25
 
 APP_ID = 'appkMAWugcQ3660'
 DOMAIN = 'appkmawugcq3660.pc.xiaoe-tech.com'
@@ -18,4 +18,3 @@ HEADERS = {
     'referer': 'https://appkmawugcq3660.pc.xiaoe-tech.com/detail/term_61c55f79648f9_RYHNiw/25',
     'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/97.0.4692.71 Safari/537.36'
 }
-
