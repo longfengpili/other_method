@@ -2,7 +2,7 @@
 # @Author: chunyang.xu
 # @Date:   2022-01-05 07:02:14
 # @Last Modified by:   chunyang.xu
-# @Last Modified time: 2022-01-07 08:37:04
+# @Last Modified time: 2022-01-07 08:43:50
 
 
 import os
@@ -208,6 +208,9 @@ class XiaoE:
         st = time.time()
         courseinfo = self.get_courseinfo(course)
         if not courseinfo:
+            title = course.get('title')
+            unlock_time = course.get('unlock_time')
+            dlogger.warning(f"【{title}】 lock, unlock_time: {unlock_time} !")
             return
 
         pageinfo = self.get_pageinfo(courseinfo[0])
