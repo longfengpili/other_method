@@ -2,7 +2,7 @@
 # @Author: chunyang.xu
 # @Date:   2022-01-05 07:02:14
 # @Last Modified by:   chunyang.xu
-# @Last Modified time: 2022-01-06 22:16:20
+# @Last Modified time: 2022-01-07 08:20:19
 
 
 import os
@@ -17,7 +17,7 @@ from concurrent.futures import ThreadPoolExecutor
 import m3u8
 from Crypto.Cipher import AES
 
-from mysetting import DOMAIN, APP_ID, HEADERS, COURSESAPI, COURSEAPI
+from mysetting import DOMAIN, APP_ID, HEADERS, COURSEAPI, PAGEAPI, COURSEDATA
 from chrome_cookie import GetCooikiesFromChrome
 
 
@@ -26,27 +26,43 @@ TARGETPATH = r'F:\深度之眼\tableau'
 
 class Tableau:
 
-    def __init__(self, app_id, domain, headers, coursesapi, courseapi):
+    def __init__(self, app_id, domain, headers, courseapi, pageapi):
         self.app_id = app_id
         self.domain = domain
         self.headers = headers
-        self.coursesapi = coursesapi
         self.courseapi = courseapi
+        self.pageapi = pageapi
+        self.cookie = self._get_cookie()
 
-    def create_headers(self):
+    def _get_cookie(self):
         get_cookies = GetCooikiesFromChrome()
         cookie = get_cookies.get(self.domain)
-        if not cookie:
+        return cookie
+
+    def create_headers(self):
+        if not self.cookie:
             raise ValueError("please login")
 
-        self.headers['Cookie'] = cookie
-        # dslogger.info(headers)
+        self.headers['Cookie'] = self.cookie
         return self.headers
 
-    def get_courseslist(self):
-        data = '{"page_size":20,"goods_id":"term_61c55f79648f9_RYHNiw","last_id":"","goods_type":25,"resource_type":[6],"has_buy":null}'
+    def myrequests_get(self, url, headers=None):
+        try:
+            req = requests.get(url, headers=headers, timeout=60) 
+        except Exception as e:
+            print(f"request 【{url}】 error, re request, error: {str(e)[:100]}")
+            time.sleep(3)
+            req = self.myrequests_get(url, headers=headers)
+
+        while req.status_code != 200:
+            print(f"【{req.status_code}】request 【{url}】 error, re request")
+            time.sleep(1)
+            req = self.myrequests_get(url, headers=headers)
+        return req
+
+    def get_courseslist(self, coursedata):
         headers = self.create_headers()
-        res = requests.post(self.coursesapi, headers=headers, data=data)
+        res = requests.post(self.courseapi, headers=headers, data=coursedata)
         res_json = res.json()
         # with open('./goods.json', 'w', encoding='utf-8') as f:
         #     json.dump(res_json, f)
@@ -65,7 +81,7 @@ class Tableau:
         data = json.dumps(data)
         # print(data)
         headers = self.create_headers()
-        res = requests.post(self.coursesapi, headers=headers, data=data)
+        res = requests.post(self.courseapi, headers=headers, data=data)
         res_json = res.json()
         courseinfo = res_json.get('data').get('goods_list')
         return courseinfo
@@ -78,7 +94,7 @@ class Tableau:
         data = json.dumps(data)
         # print(data)
         headers = self.create_headers()
-        res = requests.post(self.courseapi, headers=headers, data=data)
+        res = requests.post(self.pageapi, headers=headers, data=data)
         res_json = res.json()
         pageinfo = res_json.get('data')
         return pageinfo
@@ -98,33 +114,22 @@ class Tableau:
             video_headers['user-agent'] = headers['user-agent']
             return video_headers
 
-        def myrequests(url, video_headers=None):
-            try:
-                req = requests.get(url, headers=video_headers, timeout=60) 
-            except Exception as e:
-                print(f"request 【{url}】 error, re request, error: {str(e)[:100]}")
-                time.sleep(3)
-                req = myrequests(url, headers=video_headers)
-
-            while req.status_code != 200:
-                print(f"【{req.status_code}】request 【{url}】 error, re request")
-                time.sleep(1)
-                req = myrequests(url, headers=video_headers)
-            return req
-
-        def get_m3u8_data(m3u8_url, video_headers):
-            res = myrequests(m3u8_url, video_headers)
+        def get_m3u8_data(m3u8_url):
+            video_headers = create_video_headers()
+            res = self.myrequests_get(m3u8_url, video_headers)
             m3u8_data = res.text
             if "#EXTM3U" not in m3u8_data:
                 raise BaseException("非M3U8的链接")
             return m3u8_data
 
-        def download_ts(url_prefix, id, segment, temppath):
+        def download_ts(m3u8_url, id, segment, temppath):
+            url_prefix = m3u8_url.split('drm')[0] + 'drm/' if 'drm/' in m3u8_url else m3u8_url.split('v.f')[0]
+            video_headers = create_video_headers()
             file_tmp = os.path.join(temppath, f"{id:0>4d}.ts")
             try:
                 # key_method = segment.get('key').get('method')
                 key_url = segment.get('key').get('uri')
-                key = myrequests(key_url).content
+                key = self.myrequests_get(key_url).content
                 key_iv = segment.get('key').get('iv')
                 key_iv = key_iv.replace("0x", "")[:16].encode()  # 偏移码
             except Exception as e:
@@ -132,7 +137,7 @@ class Tableau:
                 key = None
             
             url = url_prefix + segment.get('uri')  # 拼接完整url
-            res = myrequests(url, video_headers).content  # 获取视频内容
+            res = self.myrequests_get(url, video_headers).content  # 获取视频内容
             if key:  # AES 解密
                 try:
                     cryptor = AES.new(key, AES.MODE_CBC, key_iv)
@@ -145,37 +150,37 @@ class Tableau:
                 with open(file_tmp, 'wb') as f:
                     f.write(res)
 
-        video_headers = create_video_headers()
-        title = pageinfo.get('title')
-        m3u8_url = pageinfo.get('video_m3u8')
-        url_prefix = m3u8_url.split('drm')[0] + 'drm/' if 'drm/' in m3u8_url else m3u8_url.split('v.f')[0]
-        m3u8_data = get_m3u8_data(m3u8_url, video_headers)
-        m3u8_data = m3u8.loads(m3u8_data).data
-        segments = m3u8_data.get('segments')
-        segments_num = len(segments)
+        def merge_ts2mp4(title):
+            temppath = os.path.join(TARGETPATH, title)
+            temppath = temppath.replace('/', '\\')  # 后续用户合并，使用windows命令，必须这样处理
+            targetpath = os.path.join(TARGETPATH, f'{title}.mp4')
+            subresult = subprocess.run(["copy", "/b", f"{os.path.join(temppath, '*.ts')}", f"{targetpath}"],
+                                       stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 
+            if not os.path.isfile(targetpath):
+                print(f"stdin: {subresult.args}, stderr: {subresult.stderr}")
+            else:
+                shutil.rmtree(temppath)
+
+        title = pageinfo.get('title')
         temppath = os.path.join(TARGETPATH, title)
-        
         # 生成ts临时文件夹
         if not os.path.exists(temppath):
             os.mkdir(temppath)
 
+        m3u8_url = pageinfo.get('video_m3u8')
+        m3u8_data = get_m3u8_data(m3u8_url)
+        m3u8_data = m3u8.loads(m3u8_data).data
+        segments = m3u8_data.get('segments')
+        segments_num = len(segments)
+        
         with ThreadPoolExecutor(max_workers=60) as threadpool:
-            list(tqdm(threadpool.map(download_ts, [url_prefix]*segments_num, range(segments_num), 
+            list(tqdm(threadpool.map(download_ts, [m3u8_url]*segments_num, range(segments_num), 
                       segments, [temppath]*segments_num),
                  total=segments_num, ncols=80, desc=f"[{title}]"))
 
-        # 合并并删除临时文件夹
-        temppath = temppath.replace('/', '\\')  # 后续用户合并，使用windows命令，必须这样处理
-        targetpath = os.path.join(TARGETPATH, f'{title}.mp4')
-        subresult = subprocess.run(["copy", "/b", f"{os.path.join(temppath, '*.ts')}", f"{targetpath}"],
-                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-
-        if not os.path.isfile(targetpath):
-            print(f"stdin: {subresult.args}, stderr: {subresult.stderr}")
-        else:
-            shutil.rmtree(temppath)
-
+        merge_ts2mp4(title)
+        
     def download(self, pageinfo):
         self.download_html(pageinfo)
         self.download_video(pageinfo)
@@ -196,7 +201,7 @@ class Tableau:
 
 
 if __name__ == '__main__':
-    tableau = Tableau(APP_ID, DOMAIN, HEADERS, COURSESAPI, COURSEAPI)
-    courseslist = tableau.get_courseslist()
+    tableau = Tableau(APP_ID, DOMAIN, HEADERS, COURSEAPI, PAGEAPI)
+    courseslist = tableau.get_courseslist(COURSEDATA)
     for course in courseslist:
         courseinfo = tableau.download_by_course(course)
