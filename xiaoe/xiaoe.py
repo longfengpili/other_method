@@ -2,7 +2,7 @@
 # @Author: chunyang.xu
 # @Date:   2022-01-05 07:02:14
 # @Last Modified by:   chunyang.xu
-# @Last Modified time: 2022-01-07 08:43:50
+# @Last Modified time: 2022-01-07 19:09:19
 
 
 import os
@@ -52,6 +52,11 @@ class XiaoE:
         self.courseapi = courseapi
         self.pageapi = pageapi
         self.cookie = self._get_cookie()
+        self._check_targetpath()
+
+    def _check_targetpath(self):
+        if not os.path.exists(TARGETPATH):
+            raise FileNotFoundError(f"[Errno 2] No such file or directory: '{TARGETPATH}', please change Variable 'TARGETPATH'")
 
     def _get_cookie(self):
         get_cookies = GetCooikiesFromChrome()
