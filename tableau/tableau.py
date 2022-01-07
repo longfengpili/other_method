@@ -2,7 +2,7 @@
 # @Author: chunyang.xu
 # @Date:   2022-01-05 07:02:14
 # @Last Modified by:   chunyang.xu
-# @Last Modified time: 2022-01-07 08:20:19
+# @Last Modified time: 2022-01-07 08:32:00
 
 
 import os
@@ -19,6 +19,25 @@ from Crypto.Cipher import AES
 
 from mysetting import DOMAIN, APP_ID, HEADERS, COURSEAPI, PAGEAPI, COURSEDATA
 from chrome_cookie import GetCooikiesFromChrome
+
+import logging
+import colorlog
+log_colors_config = {
+    'DEBUG': 'cyan',
+    # 'INFO': 'yellow',
+    'WARNING': 'red',
+    'ERROR': 'red',
+    'CRITICAL': 'red',
+}
+formatter = colorlog.ColoredFormatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(filename)s - %(lineno)d - %(log_color)s%(message)s',
+            log_colors=log_colors_config)
+
+handler = logging.StreamHandler()
+handler.setFormatter(formatter)
+dlogger = logging.getLogger(__name__)
+dlogger.addHandler(handler)
+dlogger.setLevel(logging.DEBUG)
 
 
 TARGETPATH = r'F:\深度之眼\tableau'
@@ -50,12 +69,12 @@ class Tableau:
         try:
             req = requests.get(url, headers=headers, timeout=60) 
         except Exception as e:
-            print(f"request 【{url}】 error, re request, error: {str(e)[:100]}")
+            dlogger.error(f"request 【{url}】 error, re request, error: {str(e)[:100]}")
             time.sleep(3)
             req = self.myrequests_get(url, headers=headers)
 
         while req.status_code != 200:
-            print(f"【{req.status_code}】request 【{url}】 error, re request")
+            # dlogger.warning(f"【{req.status_code}】request 【{url}】 error, re request")
             time.sleep(1)
             req = self.myrequests_get(url, headers=headers)
         return req
@@ -79,7 +98,7 @@ class Tableau:
         data['type'] = 1
         data['order_type'] = 0
         data = json.dumps(data)
-        # print(data)
+        # dlogger.info(data)
         headers = self.create_headers()
         res = requests.post(self.courseapi, headers=headers, data=data)
         res_json = res.json()
@@ -92,7 +111,7 @@ class Tableau:
         data['goods_type'] = courseinfo.get('resource_type')
 
         data = json.dumps(data)
-        # print(data)
+        # dlogger.info(data)
         headers = self.create_headers()
         res = requests.post(self.pageapi, headers=headers, data=data)
         res_json = res.json()
@@ -133,7 +152,7 @@ class Tableau:
                 key_iv = segment.get('key').get('iv')
                 key_iv = key_iv.replace("0x", "")[:16].encode()  # 偏移码
             except Exception as e:
-                print(e)
+                dlogger.error(e)
                 key = None
             
             url = url_prefix + segment.get('uri')  # 拼接完整url
@@ -144,7 +163,7 @@ class Tableau:
                     with open(file_tmp, 'wb') as f:
                         f.write(cryptor.decrypt(res))
                 except Exception as e:
-                    print(f"{e}, id: {id}, segment: {segment}")
+                    dlogger.warning(f"{e}, id: {id}, segment: {segment}")
                     download_ts(url_prefix, id, segment, temppath)
             else:
                 with open(file_tmp, 'wb') as f:
@@ -158,7 +177,7 @@ class Tableau:
                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 
             if not os.path.isfile(targetpath):
-                print(f"stdin: {subresult.args}, stderr: {subresult.stderr}")
+                dlogger.warning(f"stdin: {subresult.args}, stderr: {subresult.stderr}")
             else:
                 shutil.rmtree(temppath)
 
@@ -177,7 +196,7 @@ class Tableau:
         with ThreadPoolExecutor(max_workers=60) as threadpool:
             list(tqdm(threadpool.map(download_ts, [m3u8_url]*segments_num, range(segments_num), 
                       segments, [temppath]*segments_num),
-                 total=segments_num, ncols=80, desc=f"[{title}]"))
+                 total=segments_num, ncols=80, desc=f"[{title}](ts下载)"))
 
         merge_ts2mp4(title)
         
@@ -186,6 +205,7 @@ class Tableau:
         self.download_video(pageinfo)
 
     def download_by_course(self, course):
+        st = time.time()
         courseinfo = self.get_courseinfo(course)
         if not courseinfo:
             return
@@ -196,8 +216,10 @@ class Tableau:
         targetpath = os.path.join(TARGETPATH, f'{title}.mp4')
         if not os.path.exists(targetpath):
             self.download(pageinfo)
+            et = time.time()
+            dlogger.info(f"download 【{title}】 cost {et - st:.2f} seconds !")
         else:
-            print(f"{targetpath} already exists")
+            dlogger.info(f"{targetpath} already exists")
 
 
 if __name__ == '__main__':
