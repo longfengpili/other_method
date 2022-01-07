@@ -2,7 +2,7 @@
 # @Author: chunyang.xu
 # @Date:   2022-01-05 07:02:14
 # @Last Modified by:   chunyang.xu
-# @Last Modified time: 2022-01-07 08:32:00
+# @Last Modified time: 2022-01-07 08:37:04
 
 
 import os
@@ -43,7 +43,7 @@ dlogger.setLevel(logging.DEBUG)
 TARGETPATH = r'F:\深度之眼\tableau'
 
 
-class Tableau:
+class XiaoE:
 
     def __init__(self, app_id, domain, headers, courseapi, pageapi):
         self.app_id = app_id
@@ -223,7 +223,7 @@ class Tableau:
 
 
 if __name__ == '__main__':
-    tableau = Tableau(APP_ID, DOMAIN, HEADERS, COURSEAPI, PAGEAPI)
-    courseslist = tableau.get_courseslist(COURSEDATA)
+    xe = XiaoE(APP_ID, DOMAIN, HEADERS, COURSEAPI, PAGEAPI)
+    courseslist = xe.get_courseslist(COURSEDATA)
     for course in courseslist:
-        courseinfo = tableau.download_by_course(course)
+        courseinfo = xe.download_by_course(course)
