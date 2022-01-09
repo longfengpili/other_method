@@ -2,7 +2,7 @@
 # @Author: chunyang.xu
 # @Date:   2022-01-05 07:03:17
 # @Last Modified by:   chunyang.xu
-# @Last Modified time: 2022-01-06 08:03:30
+# @Last Modified time: 2022-01-10 07:57:53
 
 
 import os
@@ -10,6 +10,7 @@ import sys
 import json
 import base64
 import sqlite3
+import time
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
@@ -76,7 +77,7 @@ class GetCooikiesFromChrome(object):
             raise WindowsError
 
     def get(self, domain):
-        sql = f'SELECT name, encrypted_value as value FROM cookies where host_key like "%{domain}%"'
+        sql = f'SELECT name, encrypted_value as value, expires_utc FROM cookies where host_key like "%{domain}%"'
         filename = os.path.join(os.environ['USERPROFILE'], r'AppData\Local\Google\Chrome\User Data\default\Network\Cookies')
         con = sqlite3.connect(filename)
         con.row_factory = sqlite3.Row
@@ -87,6 +88,11 @@ class GetCooikiesFromChrome(object):
         for row in cur:
             if row['value'] is not None:
                 name = row['name']
+                expires_utc = row['expires_utc'] / 1000000
+                now = time.time()
+                if expires_utc != 0 and expires_utc < now:
+                    raise Exception(f'【{name}】Invalid expires_utc, please log in again')
+                
                 value = self.chrome_decrypt(row['value'])
                 if value is not None:
                     cookie += name + '=' + value + ';'
