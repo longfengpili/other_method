@@ -2,7 +2,7 @@
 # @Author: chunyang.xu
 # @Date:   2022-01-05 07:03:17
 # @Last Modified by:   chunyang.xu
-# @Last Modified time: 2022-01-10 07:57:53
+# @Last Modified time: 2022-01-10 09:42:16
 
 
 import os
@@ -11,6 +11,7 @@ import json
 import base64
 import sqlite3
 import time
+from datetime import datetime
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
@@ -89,9 +90,11 @@ class GetCooikiesFromChrome(object):
             if row['value'] is not None:
                 name = row['name']
                 expires_utc = row['expires_utc'] / 1000000
+                expires_utc -= 11644473600
                 now = time.time()
-                if expires_utc != 0 and expires_utc < now:
-                    raise Exception(f'【{name}】Invalid expires_utc, please log in again')
+                if expires_utc > 0 and expires_utc < now:
+                    utc = datetime.fromtimestamp(expires_utc)
+                    raise Exception(f'【{name}】expires_utc is {utc}, please log in again')
                 
                 value = self.chrome_decrypt(row['value'])
                 if value is not None:
