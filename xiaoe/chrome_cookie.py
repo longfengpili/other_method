@@ -2,7 +2,7 @@
 # @Author: chunyang.xu
 # @Date:   2022-01-05 07:03:17
 # @Last Modified by:   chunyang.xu
-# @Last Modified time: 2022-01-10 09:42:16
+# @Last Modified time: 2022-01-10 09:45:27
 
 
 import os
@@ -94,7 +94,7 @@ class GetCooikiesFromChrome(object):
                 now = time.time()
                 if expires_utc > 0 and expires_utc < now:
                     utc = datetime.fromtimestamp(expires_utc)
-                    raise Exception(f'【{name}】expires_utc is {utc}, please log in again')
+                    raise Exception(f'【{name}】expires_utc is {utc}, please login again')
                 
                 value = self.chrome_decrypt(row['value'])
                 if value is not None:
