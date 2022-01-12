@@ -2,7 +2,7 @@
 # @Author: chunyang.xu
 # @Date:   2022-01-05 07:02:14
 # @Last Modified by:   chunyang.xu
-# @Last Modified time: 2022-01-10 07:44:43
+# @Last Modified time: 2022-01-12 08:37:56
 
 
 import os
@@ -212,10 +212,15 @@ class XiaoE:
     def download_by_course(self, course):
         st = time.time()
         courseinfo = self.get_courseinfo(course)
+        
         if not courseinfo:
+            lock_state = course.get('lock_state')
             title = course.get('title')
             unlock_time = course.get('unlock_time')
-            dlogger.warning(f"【{title}】 lock, unlock_time: {unlock_time} !")
+            if lock_state == 0:
+                dlogger.warning(f"【{title}】 lock, unlock_time: {unlock_time} !")
+            else:
+                dlogger.warning(f"【{title}】 have no page !")
             return
 
         pageinfo = self.get_pageinfo(courseinfo[0])
