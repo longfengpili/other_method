@@ -2,7 +2,7 @@
 # @Author: chunyang.xu
 # @Date:   2022-01-05 07:03:17
 # @Last Modified by:   chunyang.xu
-# @Last Modified time: 2022-01-12 08:05:42
+# @Last Modified time: 2022-01-14 06:52:57
 
 
 import os
@@ -103,6 +103,8 @@ class GetCooikiesFromChrome(object):
         # cookie = cookie.encode('utf-8')
         if not cookie:
             raise f"cookie is not exist! {cookie}"
+        if 'pc_user_key' not in cookie:
+            raise BaseException(f"cookie should be have pc_user_key! {cookie}")
         return cookie
 
 
