@@ -2,7 +2,7 @@
 # @Author: chunyang.xu
 # @Date:   2022-01-05 07:02:14
 # @Last Modified by:   chunyang.xu
-# @Last Modified time: 2022-01-12 08:37:56
+# @Last Modified time: 2022-01-13 12:50:31
 
 
 import os
@@ -178,6 +178,7 @@ class XiaoE:
             temppath = os.path.join(TARGETPATH, title)
             temppath = temppath.replace('/', '\\')  # 后续用户合并，使用windows命令，必须这样处理
             targetpath = os.path.join(TARGETPATH, f'{title}.mp4')
+            targetpath = targetpath.replace('/', '\\')  # 后续用户合并，使用windows命令，必须这样处理
             subresult = subprocess.run(["copy", "/b", f"{os.path.join(temppath, '*.ts')}", f"{targetpath}"],
                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 
