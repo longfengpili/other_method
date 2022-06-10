@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: chunyang.xu
-# @Date:   2021-09-23 16:25:49
+# @Date:   2022-05-20 18:59:04
 # @Last Modified by:   chunyang.xu
-# @Last Modified time: 2022-05-20 18:59:06
-
+# @Last Modified time: 2022-06-10 10:31:27
 
 import sys
 import openpyxl
@@ -48,13 +47,13 @@ class ReadDataFromExcel(object):
         sheet = book[sheetname]
         return sheet
 
-    def get_sheetvalues_by_rows(self, sheet: open_sheet, row_num: int = None):
+    def get_sheetvalues_by_rows(self, sheetname: str, row_num: int = None):
         """[summary]
         
         [以行的模式获取sheetvalues]
         
         Arguments:
-            sheet {open_sheet} -- [sheet]
+            sheetname {str} -- [sheetname]
         
         Keyword Arguments:
             row_num {int} -- [获取的行数] (default: {None})
@@ -63,18 +62,19 @@ class ReadDataFromExcel(object):
             [list] -- [row value list]
         """
 
+        sheet = self.open_sheet(sheetname)
         srow_values = [row for row in sheet.iter_rows(values_only=True)]
         if row_num:
             srow_values = [srow_values[row_num]]
         return srow_values
 
-    def get_sheetvalues_by_columns(self, sheet: open_sheet, col_num: int = None):
+    def get_sheetvalues_by_columns(self, sheetname: str, col_num: int = None):
         """[summary]
         
         [以列的模式获取sheetvalues]
         
         Arguments:
-            sheet {open_sheet} -- [sheet]
+            sheetname {str} -- [sheetname]
         
         Keyword Arguments:
             col_num {int} -- [获取的列数] (default: {None})
@@ -83,6 +83,7 @@ class ReadDataFromExcel(object):
             [list] -- [col value list]
         """
 
+        sheet = self.open_sheet(sheetname)
         scol_values = [col for col in sheet.iter_columns(values_only=True)]
         if col_num:
             scol_values = [scol_values[col_num]]
