@@ -2,7 +2,7 @@
 # @Author: chunyang.xu
 # @Date:   2022-05-20 18:59:04
 # @Last Modified by:   chunyang.xu
-# @Last Modified time: 2022-08-23 11:04:56
+# @Last Modified time: 2022-08-23 11:47:35
 
 import sys
 import openpyxl
@@ -47,7 +47,7 @@ class ReadDataFromExcel(object):
         sheet = book[sheetname]
         return sheet
 
-    def get_sheetvalues_by_rows(self, sheetname: str, row_num: int = None):
+    def get_sheetvalues_by_rows(self, sheetname: str):
         """[summary]
         
         [以行的模式获取sheetvalues]
@@ -55,20 +55,15 @@ class ReadDataFromExcel(object):
         Arguments:
             sheetname {str} -- [sheetname]
         
-        Keyword Arguments:
-            row_num {int} -- [获取的行数] (default: {None})
-        
         Returns:
             [list] -- [row value list]
         """
 
         sheet = self.open_sheet(sheetname)
         srow_values = [row for row in sheet.iter_rows(values_only=True)]
-        if row_num:
-            srow_values = [srow_values[row_num]]
         return srow_values
 
-    def get_sheetvalues_by_columns(self, sheetname: str, col_num: int = None):
+    def get_sheetvalues_by_cols(self, sheetname: str):
         """[summary]
         
         [以列的模式获取sheetvalues]
@@ -85,9 +80,6 @@ class ReadDataFromExcel(object):
 
         sheet = self.open_sheet(sheetname)
         scol_values = [col for col in sheet.iter_columns(values_only=True)]
-        if col_num:
-            scol_values = [scol_values[col_num]]
-
         return scol_values
 
     def get_sheet_values_by_header(self, sheetname, headers, header_row=0):
@@ -105,15 +97,16 @@ class ReadDataFromExcel(object):
         Returns:
             [type] -- [description]
         """
-
-        sheet = self.open_sheet(sheetname)
-        srow_headers = self.get_sheetvalues_by_rows(sheet, row_num=header_row)[0]
+        
+        srow_values = self.get_sheetvalues_by_rows(sheetname)
+        srow_headers = srow_values[header_row]
         headers_index = [srow_headers.index(header) for header in headers]
 
-        sheet_values = [self.get_sheetvalues_by_columns(sheet, col_num=hid)[0] for hid in headers_index]
-        sheet_values = list(zip(*sheet_values))
-        sheet_values = sheet_values[header_row+1:]
-        return sheet_values
+        scol_values = self.get_sheetvalues_by_cols(sheetname)
+        headers_values = [scol_values[hid] for hid in headers_index]
+
+        headers_values = list(zip(*headers_values))
+        return headers_values
 
 
 if __name__ == '__main__':
