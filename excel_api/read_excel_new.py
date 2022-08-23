@@ -2,7 +2,7 @@
 # @Author: chunyang.xu
 # @Date:   2022-05-20 18:59:04
 # @Last Modified by:   chunyang.xu
-# @Last Modified time: 2022-06-10 10:31:27
+# @Last Modified time: 2022-08-23 11:04:56
 
 import sys
 import openpyxl
@@ -114,3 +114,13 @@ class ReadDataFromExcel(object):
         sheet_values = list(zip(*sheet_values))
         sheet_values = sheet_values[header_row+1:]
         return sheet_values
+
+
+if __name__ == '__main__':
+    filepath = './test.xlsx'
+    rexcel = ReadDataFromExcel(filepath)
+    srow_values = rexcel.get_sheetvalues_by_rows('first')
+    print(srow_values)
+
+    scol_values = rexcel.get_sheetvalues_by_rows('second')
+    print(scol_values)
