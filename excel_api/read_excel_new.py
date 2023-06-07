@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: chunyang.xu
 # @Date:   2022-05-20 18:59:04
-# @Last Modified by:   chunyang.xu
-# @Last Modified time: 2022-08-23 11:47:35
+# @Last Modified by:   longfengpili
+# @Last Modified time: 2023-06-07 15:10:10
 
 import sys
 import openpyxl
@@ -79,7 +79,7 @@ class ReadDataFromExcel(object):
         """
 
         sheet = self.open_sheet(sheetname)
-        scol_values = [col for col in sheet.iter_columns(values_only=True)]
+        scol_values = [col for col in sheet.iter_cols(values_only=True)]
         return scol_values
 
     def get_sheet_values_by_header(self, sheetname, headers, header_row=0):
