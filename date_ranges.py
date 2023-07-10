@@ -2,7 +2,7 @@
 # @Author: longfengpili
 # @Date:   2022-09-09 11:21:43
 # @Last Modified by:   longfengpili
-# @Last Modified time: 2022-09-09 11:22:33
+# @Last Modified time: 2023-06-26 11:43:00
 
 
 import logging
@@ -16,11 +16,11 @@ class DateFuncNew:
     def __init__(self, unit: str):
         self.unit = unit
 
-    def parse_dates(self, *dates, parsetype: str = 'strptime'):
+    def parse_dates(self, *dates, parsetype: str = 'strptime', formatter: str = '%Y-%m-%d'):
         if parsetype == 'strptime':
-            dates = [datetime.strptime(date, '%Y-%m-%d') for date in dates]
+            dates = [datetime.strptime(date, formatter) for date in dates]
         else:
-            dates = [datetime.strftime(date, '%Y-%m-%d') for date in dates]
+            dates = [datetime.strftime(date, formatter) for date in dates]
 
         return dates
 
