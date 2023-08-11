@@ -2,7 +2,7 @@
 # @Author: longfengpili
 # @Date:   2023-06-19 11:23:44
 # @Last Modified by:   longfengpili
-# @Last Modified time: 2023-06-19 17:20:26
+# @Last Modified time: 2023-08-11 11:15:04
 
 import time
 import random
@@ -12,7 +12,7 @@ from lxml import etree
 
 import logging
 import logging.config
-from pydbapi.conf.settings import LOGGING_CONFIG
+from pydbapi.conf import LOGGING_CONFIG
 # LOGGING_CONFIG['handlers']['console']['formatter'] = 'color'
 logging.config.dictConfig(LOGGING_CONFIG)
 glogger = logging.getLogger(__name__)
@@ -56,6 +56,9 @@ class GetPhoneInfo:
         return res
 
     def get_element_info(self, element: etree.Element, path: str, isfirst: bool = True):
+        if element is None:
+            return
+
         info = element.xpath(path)
         if not info:
             info = None
@@ -92,7 +95,7 @@ class GetPhoneInfo:
         res = self.get_page(pname)
         nomatch = 'not match any Geekbench 6 CPU'
         if nomatch in res:
-            glogger.info(f'{pname} {nomatch} !')
+            glogger.warning(f'{pname} {nomatch} !')
             res = self.get_page(pname, is_v5cpu=True)
 
         return res
@@ -101,15 +104,15 @@ class GetPhoneInfo:
         def parse_phone(pkind):
             pinfo = {}
             pinfo['idx'] = f"{idx}_{pname}"
+            pinfo['idx_name'] = pname
             pinfo['pname'] = self.get_element_info(pkind, './/div[@class="col-12 col-lg-4"]/a/text()')
             purl = self.get_element_info(pkind, './/div[@class="col-12 col-lg-4"]/a/@href')
-            pinfo['purl'] = self.url + purl
+            pinfo['purl'] = self.url + purl if purl else self.url
             pinfo['psoc'] = self.get_element_info(pkind, './/div[@class="col-12 col-lg-4"]/span[2]/text()')
             pinfo['sc_score'] = self.get_element_info(pkind, './/div[@class="col-6 col-md-3 col-lg-2"][3]/span[2]/text()')
             pinfo['mc_score'] = self.get_element_info(pkind, './/div[@class="col-6 col-md-3 col-lg-2"][4]/span[2]/text()')
             return pinfo
 
-        glogger.info(f'get {pname}')
         res = self.get_page_by_rightapi(pname)
         html = etree.HTML(res)
 
@@ -194,14 +197,19 @@ class GetPhoneInfo:
             device_info = self.get_device_info(model[1])
             phone.update(device_info)
 
+        idx = pkind.get('idx')
+        pname = phone.get('pname')
+        glogger.info(f"result {idx}::{pname}")
         phone = json.dumps(phone)
         return phone
 
-    def get_phones_info(self, phones: list):
+    def get_phones_info(self, phones: list, idx_from: int = 0):
+        length = len(phones)
         for idx, pname in enumerate(phones):
-            pkind = gpi.get_pkind_info(idx=idx, pname=pname)
-            phone = gpi.get_phone_info(pkind)
-            print(phone)
+            idx += idx_from
+            glogger.info(f"get phone [{idx:0>3d}::{length:0>3d}]{pname}")
+            pkind = self.get_pkind_info(idx=idx, pname=pname)
+            phone = self.get_phone_info(pkind)
             with open('./geekbench_phones.csv', 'a', encoding='utf-8') as f:
                 f.write(f'{phone}\n')
 

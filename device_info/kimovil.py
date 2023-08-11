@@ -2,7 +2,7 @@
 # @Author: longfengpili
 # @Date:   2023-06-16 09:17:10
 # @Last Modified by:   longfengpili
-# @Last Modified time: 2023-06-19 11:20:20
+# @Last Modified time: 2023-08-11 11:40:21
 
 
 import time
@@ -10,6 +10,13 @@ import random
 import json
 import cloudscraper
 from lxml import etree
+
+import logging
+import logging.config
+from pydbapi.conf import LOGGING_CONFIG
+# LOGGING_CONFIG['handlers']['console']['formatter'] = 'color'
+logging.config.dictConfig(LOGGING_CONFIG)
+klogger = logging.getLogger(__name__)
 
 
 class GetPhoneInfo:
@@ -26,7 +33,6 @@ class GetPhoneInfo:
         scraper = self.create_scraper()
         res = scraper.get(url)
         res = res.text
-
         return res
 
     def get_element_info(self, element: etree.Element, path: str, isfirst: bool = True):
@@ -51,6 +57,7 @@ class GetPhoneInfo:
         for idx, phone in enumerate(phones):
             phone_info = {}
             phone_info['idx'] = f'{idxname}_{idx}' if idxname else idx
+            phone_info['idx_name'] = pname
             phone_info['pname'] = self.get_element_info(phone, './/div[@class="title"]/text()')
             phone_info['purl'] = self.get_element_info(phone, './/a[@class="device-link"]/@href')
             phone_info['prelease'] = self.get_element_info(phone, './/div[@class="status available"]/text()')
@@ -73,12 +80,17 @@ class GetPhoneInfo:
         phone['battery'] = self.get_element_info(phone_info, './/li[@class="item item-battery"]/*/span/text()', isfirst=False)
         phone['os'] = self.get_element_info(phone_info, './/li[@class="item item-os k-rowspan-2"]/*/span/text()', isfirst=False)
 
+        idx = pkind.get('idx')
+        pname = phone.get('pname')
+        klogger.info(f"result {idx}::{pname}")
         phone = json.dumps(phone)
         return phone
 
     def get_phones_info(self, phones: list):
+        length = len(phones)
         for idx, pname in enumerate(phones):
-            idxname = f'{pname}_{idx}'
+            klogger.info(f"get phone [{idx:0>3d}::{length:0>3d}]{pname}")
+            idxname = f"{idx}_{pname}"
             pkinds = gpi.get_phone_kinds(idxname=idxname, pname=pname)
             for pkind in pkinds:
                 phone = gpi.get_phone_info(pkind)
@@ -96,6 +108,6 @@ class GetPhoneInfo:
 
 
 if __name__ == '__main__':
-    phones = ['samsung SM-A025F', 'samsung SM-T225']
+    phones = ['CPH2083', 'CPH1937']
     gpi = GetPhoneInfo()
     gpi.get_phones_info(phones)
