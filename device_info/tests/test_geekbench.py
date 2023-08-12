@@ -2,7 +2,7 @@
 # @Author: longfengpili
 # @Date:   2023-08-11 18:03:23
 # @Last Modified by:   chunyang.xu
-# @Last Modified time: 2023-08-12 16:13:53
+# @Last Modified time: 2023-08-12 16:25:23
 # @github: https://github.com/longfengpili
 
 from devices.device import Geekbench
@@ -22,26 +22,44 @@ class TestGeekbench:
         print(res)
 
     def test_get_pkinds(self):
-        pkinds = self.gb.get_pkinds(1, self.pname)
+        pkinds = self.gb.get_pkinds(self.pname)
         print(pkinds)
 
     def test_parse_pkind(self):
-        pkinds = self.gb.get_pkinds(1, self.pname)
+        pkinds = self.gb.get_pkinds(self.pname)
         pkind = pkinds[0]
         pkind = self.gb.parse_pkind(pkind)
         print(pkind)
 
     def test_get_phone(self):
-        pkinds = self.gb.get_pkinds(1, self.pname)
+        pkinds = self.gb.get_pkinds(self.pname)
         pkind = pkinds[0]
         pkind = self.gb.parse_pkind(pkind)
         phone = self.gb.get_phone(pkind)
         print(phone)
 
     def test_parse_phone(self):
-        pkinds = self.gb.get_pkinds(1, self.pname)
+        pkinds = self.gb.get_pkinds(self.pname)
         pkind = pkinds[0]
         pkind = self.gb.parse_pkind(pkind)
         phone = self.gb.get_phone(pkind)
         phone_info = self.gb.parse_phone(phone)
         print(phone_info)
+
+    def test_get_phones(self):
+        phones = ['samsung SM-A025F', '2206122SC']
+        for idx, pname in enumerate(phones):
+            phone_info = {}
+            pkinds = self.gb.get_pkinds(pname)
+
+            pkind = pkinds[0]
+            pkind = self.gb.parse_pkind(pkind)
+            phone_info.update(pkind)
+
+            phone = self.gb.get_phone(pkind)
+            phone = self.gb.parse_phone(phone)
+            phone_info.update(phone)
+
+            phone_info['idx'] = f"{idx}-{pname}"
+            phone_info['pname'] = pname
+            print(phone_info)

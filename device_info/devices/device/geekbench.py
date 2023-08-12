@@ -2,7 +2,7 @@
 # @Author: longfengpili
 # @Date:   2023-08-11 15:27:12
 # @Last Modified by:   chunyang.xu
-# @Last Modified time: 2023-08-12 16:12:49
+# @Last Modified time: 2023-08-12 16:29:47
 # @github: https://github.com/longfengpili
 
 
@@ -45,6 +45,7 @@ class Geekbench(Requester, Parser):
             'q': pname
         }
 
+        self.is_v5cpu = False
         res = self.base_request(url, params)
         nomatch = 'not match any Geekbench 6 CPU'
         if nomatch in res:
@@ -55,7 +56,7 @@ class Geekbench(Requester, Parser):
 
         return res
 
-    def get_pkinds(self, idx: int, pname: str):
+    def get_pkinds(self, pname: str):
         res = self.request(pname)
         html = self.etree_html(res)
         # main page
@@ -64,7 +65,7 @@ class Geekbench(Requester, Parser):
 
     def parse_pkind(self, pkind: elem):
         mpaths = (
-            ('pname', ('.//div[@class="col-12 col-lg-4"]/a/text()', )),
+            ('mname', ('.//div[@class="col-12 col-lg-4"]/a/text()', )),
             ('purl', ('.//div[@class="col-12 col-lg-4"]/a/@href', )),
             ('psoc', ('.//div[@class="col-12 col-lg-4"]/span[2]/text()', )),
             ('sc_score', ('.//div[@class="col-6 col-md-3 col-lg-2"][3]/span[2]/text()', )),
@@ -90,6 +91,7 @@ class Geekbench(Requester, Parser):
         is_v5cpu = self.is_v5cpu
         kpaths = ('.//td[1]/text()', )
         vpaths = ('.//td[2]/text()', './/td[2]/a/text()', './/td[2]/a/@href')
+        print(is_v5cpu)
 
         if is_v5cpu:
             system_path = './/div[@class="table-wrapper"][2]/table[@class="table system-table"][1]/tbody/tr'
@@ -116,5 +118,3 @@ class Geekbench(Requester, Parser):
         phone_info.update(memory_elems)
 
         return phone_info
-
-    
