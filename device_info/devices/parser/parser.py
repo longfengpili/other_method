@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: longfengpili
 # @Date:   2023-08-11 15:48:11
-# @Last Modified by:   longfengpili
-# @Last Modified time: 2023-08-11 18:28:46
+# @Last Modified by:   chunyang.xu
+# @Last Modified time: 2023-08-12 15:25:29
 # @github: https://github.com/longfengpili
 
 
@@ -33,10 +33,12 @@ class Parser:
         infos = [info.strip().replace('\n', ' ') if isinstance(info, str) else info for info in infos]
         return infos
 
-    def get_elems(self, elems: list[elem], *paths: tuple[tuple[str, str]], isfirst: bool = True):
-        _elems = {}
-        for _elem, _paths in itertools.product(elems, paths):
-            name, path = _paths
-            _elems[name] = self.get_elem(_elem, *path, isfirst=isfirst)
+    def get_elems(self, elem: elem, *mpaths: tuple[tuple[str, tuple[str]]]):
+        elems = {}
+        for mpath in mpaths:
+            name, paths = mpath
+            infos = self.get_elem(elem, *paths)
+            value = '||'.join(infos) if isinstance(infos[0], str) else infos
+            elems[name] = value
 
-        return _elems
+        return elems

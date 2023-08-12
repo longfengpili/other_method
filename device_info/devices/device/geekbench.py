@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 # @Author: longfengpili
 # @Date:   2023-08-11 15:27:12
-# @Last Modified by:   longfengpili
-# @Last Modified time: 2023-08-11 18:28:03
+# @Last Modified by:   chunyang.xu
+# @Last Modified time: 2023-08-12 15:26:19
 # @github: https://github.com/longfengpili
+
+
+from lxml.etree import Element as elem
 
 from devices.parser import Parser
 from devices.requester import Requester
@@ -48,23 +51,21 @@ class Geekbench(Requester, Parser):
         return res
 
     def get_pkinds(self, idx: int, pname: str):
-        def parse_phone(pkind):
-            pinfo = {}
-            pinfo['idx'] = f"{idx}_{pname}"
-            pinfo['idx_name'] = pname
-            pinfo['pname'] = self.get_elem(pkind, './/div[@class="col-12 col-lg-4"]/a/text()')
-            purl = self.get_elem(pkind, './/div[@class="col-12 col-lg-4"]/a/@href')
-            pinfo['purl'] = self.base_url + purl if purl else self.base_url
-            pinfo['psoc'] = self.get_elem(pkind, './/div[@class="col-12 col-lg-4"]/span[2]/text()')
-            pinfo['sc_score'] = self.get_elem(pkind, './/div[@class="col-6 col-md-3 col-lg-2"][3]/span[2]/text()')
-            pinfo['mc_score'] = self.get_elem(pkind, './/div[@class="col-6 col-md-3 col-lg-2"][4]/span[2]/text()')
-            return pinfo
-
         res = self.request(pname)
         html = self.etree_html(res)
         # main page
         pkinds = self.get_elem(html, './/div[@class="col-12 list-col"]')
         return pkinds
 
+    def parse_pkind(self, pkind: elem):
+        mpaths = (
+            ('pname', ('.//div[@class="col-12 col-lg-4"]/a/text()', )),
+            ('purl', ('.//div[@class="col-12 col-lg-4"]/a/@href', )),
+            ('psoc', ('.//div[@class="col-12 col-lg-4"]/span[2]/text()', )),
+            ('sc_score', ('.//div[@class="col-6 col-md-3 col-lg-2"][3]/span[2]/text()', )),
+            ('mc_score', ('.//div[@class="col-6 col-md-3 col-lg-2"][4]/span[2]/text()', ))
+        )
 
-
+        pkind = self.get_elems(pkind, *mpaths)
+        pkind['purl'] = self.base_url + pkind['purl']
+        return pkind

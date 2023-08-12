@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: longfengpili
 # @Date:   2023-08-11 14:18:08
-# @Last Modified by:   longfengpili
-# @Last Modified time: 2023-08-11 18:17:02
+# @Last Modified by:   chunyang.xu
+# @Last Modified time: 2023-08-12 14:44:51
 # @github: https://github.com/longfengpili
 
 import requests
@@ -33,11 +33,10 @@ class Requester:
         res = requests.get(url, headers=headers, params=params)
         status_code = res.status_code
         while status_code != 200 and try_times > 0:
+            glogger.warning(f"[Error: {status_code}]Get {url} !")
             res = requests.get(url, headers=headers, params=params)
             status_code = res.status_code
             try_times -= 1
-        else:
-            glogger.warning(f"request try {try_times} times")
 
         res = res.text if status_code == 200 else ''
         return res
