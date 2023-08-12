@@ -2,7 +2,7 @@
 # @Author: longfengpili
 # @Date:   2023-08-11 15:27:12
 # @Last Modified by:   chunyang.xu
-# @Last Modified time: 2023-08-12 16:29:47
+# @Last Modified time: 2023-08-12 16:32:21
 # @github: https://github.com/longfengpili
 
 
@@ -50,8 +50,8 @@ class Geekbench(Requester, Parser):
         nomatch = 'not match any Geekbench 6 CPU'
         if nomatch in res:
             glogger.warning(f'{pname} {nomatch} !')
-            self.is_v5cpu = True
             params['k'] = 'v5_cpu'
+            self.is_v5cpu = True
             res = self.base_request(url, params)
 
         return res
