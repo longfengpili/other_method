@@ -2,7 +2,7 @@
 # @Author: longfengpili
 # @Date:   2023-08-11 18:03:23
 # @Last Modified by:   chunyang.xu
-# @Last Modified time: 2023-08-12 16:25:23
+# @Last Modified time: 2023-08-12 16:33:49
 # @github: https://github.com/longfengpili
 
 from devices.device import Geekbench
@@ -52,14 +52,15 @@ class TestGeekbench:
             phone_info = {}
             pkinds = self.gb.get_pkinds(pname)
 
-            pkind = pkinds[0]
-            pkind = self.gb.parse_pkind(pkind)
-            phone_info.update(pkind)
+            # pkind = pkinds[0]
+            for _idx, pkind in enumerate(pkinds):
+                pkind = self.gb.parse_pkind(pkind)
+                phone_info.update(pkind)
 
-            phone = self.gb.get_phone(pkind)
-            phone = self.gb.parse_phone(phone)
-            phone_info.update(phone)
+                phone = self.gb.get_phone(pkind)
+                phone = self.gb.parse_phone(phone)
+                phone_info.update(phone)
 
-            phone_info['idx'] = f"{idx}-{pname}"
-            phone_info['pname'] = pname
-            print(phone_info)
+                phone_info['idx'] = f"{idx}-{pname}-{_idx}"
+                phone_info['pname'] = pname
+                print(phone_info)
