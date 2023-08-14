@@ -2,11 +2,8 @@
 # @Author: longfengpili
 # @Date:   2023-08-11 15:48:11
 # @Last Modified by:   longfengpili
-# @Last Modified time: 2023-08-14 14:23:32
+# @Last Modified time: 2023-08-14 16:51:41
 # @github: https://github.com/longfengpili
-
-
-import itertools
 
 from lxml import etree
 from lxml.etree import Element as elem

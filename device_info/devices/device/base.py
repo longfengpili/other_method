@@ -2,7 +2,7 @@
 # @Author: longfengpili
 # @Date:   2023-08-14 13:39:07
 # @Last Modified by:   longfengpili
-# @Last Modified time: 2023-08-14 16:09:54
+# @Last Modified time: 2023-08-14 16:50:53
 # @github: https://github.com/longfengpili
 
 
@@ -66,7 +66,7 @@ class PhoneBase(Requester, Parser):
 
         for idx, pname in enumerate(phones):
             idx += fidx
-            pblogger.info(f"Get [{idx:0>4d}]{pname} start, pkind select {self.pkind_selector} ~")
+            pblogger.info(f"Get [{idx:0>4d}]{pname} start, pkind select [{self.pkind_selector}] ~")
             pkinds = self.get_pkinds(pname)
 
             if pkind_selector == 'first':
@@ -77,16 +77,12 @@ class PhoneBase(Requester, Parser):
                 pass
 
             for pkidx, pkind in enumerate(pkinds):
-                phone_info = {}
                 pkind = self.parse_pkind(pkind)
-                phone_info.update(pkind)
 
                 phone = self.get_phone(pkind)
                 phone = self.parse_phone(phone)
-                phone_info.update(phone)
 
-                phone_info['idx'] = f"{idx:0>4d}::{pname}::{pkidx:0>4d}"
-                phone_info['pname'] = pname
-                mphone = Phone.load(phone_info)
+                idx = f"{idx:0>4d}::{pname}::{pkidx:0>4d}"
+                mphone = Phone.load(idx=idx, pname=pname, **pkind, **phone)
                 pblogger.info(mphone)
-                print(phone_info)
+                print(mphone.data_json)
