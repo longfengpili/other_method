@@ -1,28 +1,32 @@
 # -*- coding: utf-8 -*-
 # @Author: longfengpili
 # @Date:   2023-08-11 15:27:12
-# @Last Modified by:   chunyang.xu
-# @Last Modified time: 2023-08-12 16:32:21
+# @Last Modified by:   longfengpili
+# @Last Modified time: 2023-08-14 14:51:35
 # @github: https://github.com/longfengpili
-
-
-import time
-import random
 
 from lxml.etree import Element as elem
 
-from devices.parser import Parser
-from devices.requester import Requester
+from .base import PhoneBase
 
 import logging
 glogger = logging.getLogger(__name__)
 
 
-class Geekbench(Requester, Parser):
+class Geekbench(PhoneBase):
+    KIND_PATH = './/div[@class="col-12 list-col"]'
+    PKIND_SELECTOR = 'first'
+    KIND_MPATHS = (
+            ('mname', ('.//div[@class="col-12 col-lg-4"]/a/text()', )),
+            ('purl', ('.//div[@class="col-12 col-lg-4"]/a/@href', )),
+            ('psoc', ('.//div[@class="col-12 col-lg-4"]/span[2]/text()', )),
+            ('sc_score', ('.//div[@class="col-6 col-md-3 col-lg-2"][3]/span[2]/text()', )),
+            ('mc_score', ('.//div[@class="col-6 col-md-3 col-lg-2"][4]/span[2]/text()', ))
+        )
 
     def __init__(self):
         self.is_v5cpu = False
-        super(Geekbench, self).__init__()
+        super(Geekbench, self).__init__(self.KIND_PATH, self.PKIND_SELECTOR, self.KIND_MPATHS)
 
     @property
     def base_url(self):
@@ -55,43 +59,13 @@ class Geekbench(Requester, Parser):
             res = self.base_request(url, params)
 
         return res
-
-    def get_pkinds(self, pname: str):
-        res = self.request(pname)
-        html = self.etree_html(res)
-        # main page
-        pkinds = self.get_elem(html, './/div[@class="col-12 list-col"]')
-        return pkinds
-
-    def parse_pkind(self, pkind: elem):
-        mpaths = (
-            ('mname', ('.//div[@class="col-12 col-lg-4"]/a/text()', )),
-            ('purl', ('.//div[@class="col-12 col-lg-4"]/a/@href', )),
-            ('psoc', ('.//div[@class="col-12 col-lg-4"]/span[2]/text()', )),
-            ('sc_score', ('.//div[@class="col-6 col-md-3 col-lg-2"][3]/span[2]/text()', )),
-            ('mc_score', ('.//div[@class="col-6 col-md-3 col-lg-2"][4]/span[2]/text()', ))
-        )
-
-        pkind = self.get_elem_mpath(pkind, *mpaths)
-        pkind['purl'] = self.base_url + pkind['purl']
-        return pkind
-
-    def get_phone(self, pkind: elem):
-        phone = {}
-        phone.update(pkind)
-        time.sleep(random.random() * 5)
-        purl = pkind.get('purl')
-        res = self.base_request(purl)
-        phone = self.etree_html(res)
-
-        return phone
         
     def parse_phone(self, phone: elem):
         phone_info = {}
         is_v5cpu = self.is_v5cpu
         kpaths = ('.//td[1]/text()', )
         vpaths = ('.//td[2]/text()', './/td[2]/a/text()', './/td[2]/a/@href')
-        print(is_v5cpu)
+        # print(is_v5cpu)
 
         if is_v5cpu:
             system_path = './/div[@class="table-wrapper"][2]/table[@class="table system-table"][1]/tbody/tr'
@@ -103,18 +77,18 @@ class Geekbench(Requester, Parser):
             memory_path = './/div[@class="table-wrapper"][4]/table[@class="table system-table"]/tbody/tr'
 
         # System Information
-        system_trs = phone.xpath(system_path)
-        system_elems = self.get_elems_kv(system_trs, kpaths, vpaths)
+        system = self.get_elem(phone, system_path)
+        system_elems = self.get_elems_kv(system, kpaths, vpaths)
         phone_info.update(system_elems)
 
         # CPU Information
-        cpu_trs = phone.xpath(cpu_path)
-        cpu_elems = self.get_elems_kv(cpu_trs, kpaths, vpaths)
+        cpu = self.get_elem(phone, cpu_path)
+        cpu_elems = self.get_elems_kv(cpu, kpaths, vpaths)
         phone_info.update(cpu_elems)
 
         # Memory Information
-        memory_trs = phone.xpath(memory_path)
-        memory_elems = self.get_elems_kv(memory_trs, kpaths, vpaths)
+        memory = self.get_elem(phone, memory_path)
+        memory_elems = self.get_elems_kv(memory, kpaths, vpaths)
         phone_info.update(memory_elems)
 
         return phone_info

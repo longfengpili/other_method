@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: longfengpili
 # @Date:   2023-08-11 15:48:11
-# @Last Modified by:   chunyang.xu
-# @Last Modified time: 2023-08-12 15:51:35
+# @Last Modified by:   longfengpili
+# @Last Modified time: 2023-08-14 14:23:32
 # @github: https://github.com/longfengpili
 
 
@@ -39,7 +39,10 @@ class Parser:
         for mpath in mpaths:
             name, paths = mpath
             infos = self.get_elem(elem, *paths)
-            value = '||'.join(infos) if isinstance(infos[0], str) else infos
+            # if name == 'size':
+            #     print(etree.tostring(elem))
+            #     print(infos)
+            value = '||'.join(infos) if infos and isinstance(infos[0], str) else '' if not infos else infos
             elem_mpath[name] = value
 
         return elem_mpath
@@ -52,4 +55,3 @@ class Parser:
             meles[name] = value
 
         return meles
-

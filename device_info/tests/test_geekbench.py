@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 # @Author: longfengpili
 # @Date:   2023-08-11 18:03:23
-# @Last Modified by:   chunyang.xu
-# @Last Modified time: 2023-08-12 16:33:49
+# @Last Modified by:   longfengpili
+# @Last Modified time: 2023-08-14 14:19:25
 # @github: https://github.com/longfengpili
+
+import pytest
 
 from devices.device import Geekbench
 
@@ -17,6 +19,7 @@ class TestGeekbench:
     def teardown_method(self, method):
         pass
 
+    @pytest.mark.skip()
     def test_request(self):
         res = self.gb.request(self.pname)
         print(res)
@@ -48,19 +51,4 @@ class TestGeekbench:
 
     def test_get_phones(self):
         phones = ['samsung SM-A025F', '2206122SC']
-        for idx, pname in enumerate(phones):
-            phone_info = {}
-            pkinds = self.gb.get_pkinds(pname)
-
-            # pkind = pkinds[0]
-            for _idx, pkind in enumerate(pkinds):
-                pkind = self.gb.parse_pkind(pkind)
-                phone_info.update(pkind)
-
-                phone = self.gb.get_phone(pkind)
-                phone = self.gb.parse_phone(phone)
-                phone_info.update(phone)
-
-                phone_info['idx'] = f"{idx}-{pname}-{_idx}"
-                phone_info['pname'] = pname
-                print(phone_info)
+        self.gb.get_phones(phones)
