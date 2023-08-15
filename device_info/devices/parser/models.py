@@ -2,7 +2,7 @@
 # @Author: longfengpili
 # @Date:   2023-08-14 10:48:41
 # @Last Modified by:   longfengpili
-# @Last Modified time: 2023-08-15 15:10:44
+# @Last Modified time: 2023-08-15 16:52:57
 # @github: https://github.com/longfengpili
 
 import json
@@ -20,7 +20,11 @@ class Phone:
         return super(Phone, self).__getattribute__(item)
 
     def __repr__(self):
-        return f"{self.pname}({self.mname}::{self.purl})"
+        pname = f"[{self.idx:0>4d}]{self.pname}"
+        mname, pkidx, purl = self.mname, self.pkidx, self.purl
+        mname = mname if pkidx is None else f"{mname}::{pkidx}"
+        mname = f"{mname}::{purl}" if purl else mname
+        return f"{pname}({mname})"
 
     @property
     def data(self):
@@ -36,8 +40,13 @@ class Phone:
         return data
 
     @classmethod
-    def load(cls, **kwargs):
+    def load_from_json(cls, jsondata: str):
+        kwargs = json.loads(jsondata)
         return cls(**kwargs)
+
+    def dump(self, dumpfile: str):
+        with open(dumpfile, 'a', encoding='utf-8') as f:
+            f.write(f"{self.data_json}\n")
 
     def get(self, item: str):
         try:
@@ -92,6 +101,8 @@ class Phone:
                     concat_values[key] = f"{value}({length}->{value_count})"
 
         special_keys = all_keys - set(common_value_keys)
-        special = [{attr: phone.get(attr) for attr in phone.attrs if attr in special_keys} for phone in phones]
-        concat_values['special'] = special
+        specials = [{attr: phone.get(attr) for attr in phone.attrs if attr in special_keys} for phone in phones]
+        specials = [{k: concat_values.get(k) if concat_values.get(k) and concat_values.get(k).startswith(v) else v 
+                    for k, v in special.items()} for special in specials]
+        concat_values['specials'] = specials
         return Phone(**concat_values)

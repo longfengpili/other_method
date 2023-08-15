@@ -2,7 +2,7 @@
 # @Author: longfengpili
 # @Date:   2023-08-14 13:39:07
 # @Last Modified by:   longfengpili
-# @Last Modified time: 2023-08-15 14:44:10
+# @Last Modified time: 2023-08-15 16:43:45
 # @github: https://github.com/longfengpili
 
 
@@ -77,17 +77,19 @@ class PhoneBase(Requester, Parser):
             else:
                 pass
 
+            pklength = len(pkinds)
             for pkidx, pkind in enumerate(pkinds):
                 pkind = self.parse_pkind(pkind)
 
                 phone = self.get_phone(pkind)
                 phone = self.parse_phone(phone)
 
-                pidx = f"{idx:0>4d}::{pname}::{pkidx:0>4d}"
-                mphone = Phone.load(pidx=pidx, pname=pname, **pkind, **phone)
+                pkidx = None if pklength == 1 else pkidx
+                mphone = Phone(idx=idx, pkidx=pkidx, pname=pname, **pkind, **phone)
 
                 pblogger.info(mphone)
                 phone_info.append(mphone)
 
             phone_info = Phone.concat(*phone_info)
-            print(phone_info.data_json)
+            pblogger.info(f"Get [{idx:0>4d}]{pname} end, {phone_info} ~")
+            phone_info.dump('./test.csv')
