@@ -2,7 +2,7 @@
 # @Author: longfengpili
 # @Date:   2023-08-14 13:39:07
 # @Last Modified by:   longfengpili
-# @Last Modified time: 2023-08-16 11:52:55
+# @Last Modified time: 2023-08-16 11:54:40
 # @github: https://github.com/longfengpili
 
 
@@ -64,7 +64,7 @@ class PhoneBase(Requester, Parser):
     def parse_phone(self, phone: elem):
         pass
 
-    def get_phones(self, idx: int, pname: str):
+    def get_phone(self, idx: int, pname: str):
         pkind_selector = self.pkind_selector
         phone_info = []
 
