@@ -2,7 +2,7 @@
 # @Author: longfengpili
 # @Date:   2023-08-11 18:03:23
 # @Last Modified by:   longfengpili
-# @Last Modified time: 2023-08-16 11:44:20
+# @Last Modified time: 2023-08-16 11:56:39
 # @github: https://github.com/longfengpili
 
 import pytest
@@ -53,7 +53,7 @@ class TestGeekbench:
     def test_get_phones(self):
         phones = ['samsung SM-A025F', '2206122SC']
         for idx, pname in enumerate(phones):
-            phone_info = self.gb.get_phones(idx, pname)
+            phone_info = self.gb.get_phone(idx, pname)
             print(phone_info)
 
     # def test_get_phones_with_tpool(self):

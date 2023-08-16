@@ -2,7 +2,7 @@
 # @Author: longfengpili
 # @Date:   2023-08-11 18:03:23
 # @Last Modified by:   longfengpili
-# @Last Modified time: 2023-08-16 11:49:03
+# @Last Modified time: 2023-08-16 11:56:33
 # @github: https://github.com/longfengpili
 
 import pytest
@@ -58,7 +58,7 @@ class TestKimovil:
         phones = ['vivo 1906', 'CPH2083', '2206122SC']
         phones = ['samsung SM-A025F', '2206122SC']
         for idx, pname in enumerate(phones):
-            phone_info = self.km.get_phones(idx, pname)
+            phone_info = self.km.get_phone(idx, pname)
             print(phone_info)
 
     # def test_get_phones_with_tpool(self):
