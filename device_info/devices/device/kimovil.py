@@ -2,7 +2,7 @@
 # @Author: longfengpili
 # @Date:   2023-08-14 11:22:47
 # @Last Modified by:   longfengpili
-# @Last Modified time: 2023-08-14 14:49:16
+# @Last Modified time: 2023-08-16 11:05:20
 # @github: https://github.com/longfengpili
 
 import cloudscraper
@@ -37,6 +37,7 @@ class Kimovil(PhoneBase):
         return scraper
 
     def base_request(self, url: str):
+        # print(url)
         res = self.scraper.get(url)
         res = res.text
         return res
@@ -45,7 +46,7 @@ class Kimovil(PhoneBase):
         param = f'name.{pname}' if pname else f'page.{page}'
         url = f"{self.base_url}/{param}"
         res = self.base_request(url)
-        return res
+        return url, res
         
     def parse_phone(self, phone: elem):
         mpaths = (

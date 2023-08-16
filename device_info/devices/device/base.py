@@ -2,14 +2,16 @@
 # @Author: longfengpili
 # @Date:   2023-08-14 13:39:07
 # @Last Modified by:   longfengpili
-# @Last Modified time: 2023-08-15 16:43:45
+# @Last Modified time: 2023-08-16 11:52:55
 # @github: https://github.com/longfengpili
 
 
 import time
 import random
-
+import threading
 from urllib.parse import urlparse
+from concurrent.futures import ThreadPoolExecutor
+
 from lxml.etree import Element as elem
 
 from devices.parser import Phone
@@ -21,6 +23,7 @@ pblogger = logging.getLogger(__name__)
 
 
 class PhoneBase(Requester, Parser):
+    pblock = threading.Lock()
 
     def __init__(self, kind_path: str, pkind_selector: str, kind_mpaths: tuple[tuple[str, tuple[str]]]):
         self.kind_path = kind_path
@@ -32,11 +35,11 @@ class PhoneBase(Requester, Parser):
         pass
 
     def get_pkinds(self, pname: str):
-        res = self.request(pname)
+        url, res = self.request(pname)
         html = self.etree_html(res)
         # main page
         pkinds = self.get_elem(html, self.kind_path)
-        return pkinds
+        return url, pkinds
 
     def parse_pkind(self, pkind: elem):
         pkind = self.get_elem_mpath(pkind, *self.kind_mpaths)
@@ -46,7 +49,7 @@ class PhoneBase(Requester, Parser):
             pkind['purl'] = self.base_url + purl
         return pkind
 
-    def get_phone(self, pkind: elem):
+    def get_phone_by_pkind(self, pkind: elem):
         phone = {}
         phone.update(pkind)
         time.sleep(random.random() * 5)
@@ -61,35 +64,50 @@ class PhoneBase(Requester, Parser):
     def parse_phone(self, phone: elem):
         pass
 
-    def get_phones(self, phones: list, fidx: int = 0):
+    def get_phones(self, idx: int, pname: str):
         pkind_selector = self.pkind_selector
+        phone_info = []
 
-        for idx, pname in enumerate(phones):
-            phone_info = []
-            idx += fidx
-            pblogger.info(f"Get [{idx:0>4d}]{pname} start, pkind select [{self.pkind_selector}] ~")
-            pkinds = self.get_pkinds(pname)
+        pblogger.info(f"【START】, [{idx:0>4d}]{pname}, pkind select [{self.pkind_selector}] ~")
+        url, pkinds = self.get_pkinds(pname)
 
-            if pkind_selector == 'first':
-                pkinds = pkinds[:1]
-            elif pkind_selector == 'random':
-                pkinds = random.sample(pkinds, 1)
-            else:
-                pass
+        if pkind_selector == 'first':
+            pkinds = pkinds[:1]
+        elif pkind_selector == 'random':
+            pkinds = random.sample(pkinds, 1)
+        else:
+            pass
 
-            pklength = len(pkinds)
-            for pkidx, pkind in enumerate(pkinds):
-                pkind = self.parse_pkind(pkind)
+        pklength = len(pkinds)
+        for pkidx, pkind in enumerate(pkinds):
+            pkind = self.parse_pkind(pkind)
 
-                phone = self.get_phone(pkind)
-                phone = self.parse_phone(phone)
+            phone = self.get_phone_by_pkind(pkind)
+            phone = self.parse_phone(phone)
 
-                pkidx = None if pklength == 1 else pkidx
-                mphone = Phone(idx=idx, pkidx=pkidx, pname=pname, **pkind, **phone)
+            pkidx = None if pklength == 1 else pkidx
+            mphone = Phone(idx=idx, surl=url, pkidx=pkidx, pname=pname, **pkind, **phone)
+            pblogger.debug(mphone)
+            phone_info.append(mphone)
+        
+        if pklength == 0:
+            mphone = Phone(idx=idx, surl=url, pname=pname)
+            pblogger.debug(mphone)
+            phone_info.append(mphone)
 
-                pblogger.info(mphone)
-                phone_info.append(mphone)
+        phone_info = Phone.concat(*phone_info)
+        pblogger.info(f"【END】, [{idx:0>4d}]{pname} ~")
+        phone_info.dump('./test.csv')
+        return phone_info
 
-            phone_info = Phone.concat(*phone_info)
-            pblogger.info(f"Get [{idx:0>4d}]{pname} end, {phone_info} ~")
-            phone_info.dump('./test.csv')
+    def get_phones_with_tpool(self, phones: list):
+        r = []
+        count = 5
+        _phones = [phones[i: i+count] for i in range(0, len(phones), count)]
+        _fidxs = [i for i in range(0, len(phones), count)]
+
+        with ThreadPoolExecutor(max_workers=5, thread_name_prefix='p5') as tpool:
+            results = tpool.map(self.get_phones, _phones, _fidxs)
+            r.extend(results)
+
+        return r

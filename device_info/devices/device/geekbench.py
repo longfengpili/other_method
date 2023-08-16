@@ -2,7 +2,7 @@
 # @Author: longfengpili
 # @Date:   2023-08-11 15:27:12
 # @Last Modified by:   longfengpili
-# @Last Modified time: 2023-08-15 15:12:26
+# @Last Modified time: 2023-08-16 11:46:07
 # @github: https://github.com/longfengpili
 
 from lxml.etree import Element as elem
@@ -58,7 +58,7 @@ class Geekbench(PhoneBase):
             self.is_v5cpu = True
             res = self.base_request(url, params)
 
-        return res
+        return url, res
         
     def parse_phone(self, phone: elem):
         phone_info = {}

@@ -2,7 +2,7 @@
 # @Author: longfengpili
 # @Date:   2023-08-14 10:48:41
 # @Last Modified by:   longfengpili
-# @Last Modified time: 2023-08-15 16:52:57
+# @Last Modified time: 2023-08-16 11:16:04
 # @github: https://github.com/longfengpili
 
 import json
@@ -95,7 +95,7 @@ class Phone:
                 concat_values[key] = values[0]
             else:
                 v_count = {value: values.count(value) for value in values_set}
-                v_count_sorted = sorted(v_count.items(), key=lambda x: x[1], reverse=True)
+                v_count_sorted = sorted(v_count.items(), key=lambda x: (x[1], x[0]), reverse=True)
                 value, value_count = v_count_sorted[0]
                 if value_count >= 2:
                     concat_values[key] = f"{value}({length}->{value_count})"
