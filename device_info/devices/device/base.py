@@ -2,7 +2,7 @@
 # @Author: longfengpili
 # @Date:   2023-08-14 13:39:07
 # @Last Modified by:   longfengpili
-# @Last Modified time: 2023-08-16 11:54:40
+# @Last Modified time: 2023-08-17 17:09:44
 # @github: https://github.com/longfengpili
 
 
@@ -90,24 +90,19 @@ class PhoneBase(Requester, Parser):
             pblogger.debug(mphone)
             phone_info.append(mphone)
         
-        if pklength == 0:
+        if pklength == 0:  # 解决没有pkinds的数据
             mphone = Phone(idx=idx, surl=url, pname=pname)
             pblogger.debug(mphone)
             phone_info.append(mphone)
 
         phone_info = Phone.concat(*phone_info)
         pblogger.info(f"【END】, [{idx:0>4d}]{pname} ~")
-        phone_info.dump('./test.csv')
+        phone_info.dump()
         return phone_info
 
-    def get_phones_with_tpool(self, phones: list):
-        r = []
-        count = 5
-        _phones = [phones[i: i+count] for i in range(0, len(phones), count)]
-        _fidxs = [i for i in range(0, len(phones), count)]
+    def get_phones_with_tpool(self, phones: list, max_workers: int = 5):
+        thread_name_prefix = f"p{max_workers}"
+        with ThreadPoolExecutor(max_workers=max_workers, thread_name_prefix=thread_name_prefix) as tpool:
+            phones = tpool.map(self.get_phone, range(len(phones)), phones)
 
-        with ThreadPoolExecutor(max_workers=5, thread_name_prefix='p5') as tpool:
-            results = tpool.map(self.get_phones, _phones, _fidxs)
-            r.extend(results)
-
-        return r
+        return phones

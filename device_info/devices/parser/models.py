@@ -2,13 +2,16 @@
 # @Author: longfengpili
 # @Date:   2023-08-14 10:48:41
 # @Last Modified by:   longfengpili
-# @Last Modified time: 2023-08-16 11:16:04
+# @Last Modified time: 2023-08-17 17:11:22
 # @github: https://github.com/longfengpili
 
+
+import time
 import json
 
 
 class Phone:
+    dumpfile = f"phone{time.time()}.csv"
 
     def __init__(self, **kwargs):
         self.kwargs = kwargs
@@ -21,6 +24,7 @@ class Phone:
 
     def __repr__(self):
         pname = f"[{self.idx:0>4d}]{self.pname}"
+        
         mname, pkidx, purl = self.mname, self.pkidx, self.purl
         mname = mname if pkidx is None else f"{mname}::{pkidx}"
         mname = f"{mname}::{purl}" if purl else mname
@@ -44,7 +48,8 @@ class Phone:
         kwargs = json.loads(jsondata)
         return cls(**kwargs)
 
-    def dump(self, dumpfile: str):
+    def dump(self, dumpfile: str = None):
+        dumpfile = dumpfile or self.dumpfile
         with open(dumpfile, 'a', encoding='utf-8') as f:
             f.write(f"{self.data_json}\n")
 
@@ -54,9 +59,9 @@ class Phone:
         except:
             return self.kwargs.get(item)
 
-    def update(self, phone):
+    def update(self, other):
         update_status = True
-        pdata = phone.data
+        pdata = other.data
         pmname = self.mname
         _pmname = pdata.get('mname')
         if pmname and pmname != _pmname:
@@ -77,32 +82,32 @@ class Phone:
         return update_status
 
     @staticmethod
-    def concat(*phones: tuple):
-        length = len(phones)
+    def concat(*others: tuple):
+        length = len(others)
         if length == 1:
-            return phones[0]
+            return others[0]
 
-        all_keys = set.union(*[phone.attrs for phone in phones])
-        common_keys = set.intersection(*[phone.attrs for phone in phones])
+        all_keys = set.union(*[other.attrs for other in others])
+        common_keys = set.intersection(*[other.attrs for other in others])
         common_value_keys = []
-        concat_values = {}
+        concats = {}
 
         for key in common_keys:
-            values = [phone.get(key) for phone in phones]
+            values = [other.get(key) for other in others]
             values_set = set(values)
             if len(values_set) == 1:
                 common_value_keys.append(key)
-                concat_values[key] = values[0]
+                concats[key] = values[0]
             else:
-                v_count = {value: values.count(value) for value in values_set}
-                v_count_sorted = sorted(v_count.items(), key=lambda x: (x[1], x[0]), reverse=True)
-                value, value_count = v_count_sorted[0]
-                if value_count >= 2:
-                    concat_values[key] = f"{value}({length}->{value_count})"
+                vcount = ((value, values.count(value)) for value in values_set)
+                vcount_sorted = sorted(vcount, key=lambda x: (x[1], x[0]), reverse=True)
+                value, vcount = vcount_sorted[0]
+                if vcount >= 2:
+                    concats[key] = f"{value}({length}->{vcount})"
 
         special_keys = all_keys - set(common_value_keys)
-        specials = [{attr: phone.get(attr) for attr in phone.attrs if attr in special_keys} for phone in phones]
-        specials = [{k: concat_values.get(k) if concat_values.get(k) and concat_values.get(k).startswith(v) else v 
+        specials = [{attr: other.get(attr) for attr in other.attrs if attr in special_keys} for other in others]
+        specials = [{k: concats.get(k) if concats.get(k) and concats.get(k).startswith(v) else v 
                     for k, v in special.items()} for special in specials]
-        concat_values['specials'] = specials
-        return Phone(**concat_values)
+        concats['specials'] = specials
+        return Phone(**concats)
