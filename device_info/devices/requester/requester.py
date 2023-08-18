@@ -2,7 +2,7 @@
 # @Author: longfengpili
 # @Date:   2023-08-11 14:18:08
 # @Last Modified by:   longfengpili
-# @Last Modified time: 2023-08-16 11:46:52
+# @Last Modified time: 2023-08-17 17:23:34
 # @github: https://github.com/longfengpili
 
 import requests
@@ -38,5 +38,5 @@ class Requester:
             status_code = res.status_code
             try_times -= 1
 
-        res = res.text if status_code == 200 else ''
-        return res
+        # res = res.text if status_code == 200 else ''
+        return res, status_code

@@ -2,7 +2,7 @@
 # @Author: longfengpili
 # @Date:   2023-08-11 15:27:12
 # @Last Modified by:   longfengpili
-# @Last Modified time: 2023-08-16 11:46:07
+# @Last Modified time: 2023-08-17 17:24:18
 # @github: https://github.com/longfengpili
 
 from lxml.etree import Element as elem
@@ -50,13 +50,14 @@ class Geekbench(PhoneBase):
         }
 
         self.is_v5cpu = False
-        res = self.base_request(url, params)
+        res, status_code = self.base_request(url, params)
+        res_text = res.text if status_code == 200 else ''
         nomatch = 'not match any Geekbench 6 CPU'
-        if nomatch in res:
+        if nomatch in res_text:
             glogger.warning(f'{pname} {nomatch} !')
             params['k'] = 'v5_cpu'
             self.is_v5cpu = True
-            res = self.base_request(url, params)
+            res, status_code = self.base_request(url, params)
 
         return url, res
         

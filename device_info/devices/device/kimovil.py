@@ -2,7 +2,7 @@
 # @Author: longfengpili
 # @Date:   2023-08-14 11:22:47
 # @Last Modified by:   longfengpili
-# @Last Modified time: 2023-08-16 11:05:20
+# @Last Modified time: 2023-08-18 11:56:50
 # @github: https://github.com/longfengpili
 
 import cloudscraper
@@ -38,14 +38,14 @@ class Kimovil(PhoneBase):
 
     def base_request(self, url: str):
         # print(url)
+        status_code = 200
         res = self.scraper.get(url)
-        res = res.text
-        return res
+        return res, status_code
 
     def request(self, pname: str = None, page: int = None):
         param = f'name.{pname}' if pname else f'page.{page}'
         url = f"{self.base_url}/{param}"
-        res = self.base_request(url)
+        res, _ = self.base_request(url)
         return url, res
         
     def parse_phone(self, phone: elem):

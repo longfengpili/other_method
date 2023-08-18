@@ -2,7 +2,7 @@
 # @Author: longfengpili
 # @Date:   2023-08-14 13:39:07
 # @Last Modified by:   longfengpili
-# @Last Modified time: 2023-08-17 17:09:44
+# @Last Modified time: 2023-08-17 17:30:03
 # @github: https://github.com/longfengpili
 
 
@@ -36,6 +36,7 @@ class PhoneBase(Requester, Parser):
 
     def get_pkinds(self, pname: str):
         url, res = self.request(pname)
+        res = res.text
         html = self.etree_html(res)
         # main page
         pkinds = self.get_elem(html, self.kind_path)
@@ -54,7 +55,8 @@ class PhoneBase(Requester, Parser):
         phone.update(pkind)
         time.sleep(random.random() * 5)
         purl = pkind.get('purl')
-        res = self.base_request(purl)
+        res, status_code = self.base_request(purl)
+        res = res.text
         # with open('./test.html', 'w', encoding='utf-8') as f:
         #     f.write(res)
         phone = self.etree_html(res)

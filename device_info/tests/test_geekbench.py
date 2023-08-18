@@ -2,7 +2,7 @@
 # @Author: longfengpili
 # @Date:   2023-08-11 18:03:23
 # @Last Modified by:   longfengpili
-# @Last Modified time: 2023-08-17 17:17:52
+# @Last Modified time: 2023-08-18 11:58:30
 # @github: https://github.com/longfengpili
 
 import pytest
@@ -38,6 +38,7 @@ class TestGeekbench:
     def test_get_phone_by_pkind(self):
         url, pkinds = self.gb.get_pkinds(self.pname)
         pkind = pkinds[0]
+        print(pkind)
         pkind = self.gb.parse_pkind(pkind)
         phone = self.gb.get_phone_by_pkind(pkind)
         print(phone)
@@ -46,6 +47,7 @@ class TestGeekbench:
         url, pkinds = self.gb.get_pkinds(self.pname)
         pkind = pkinds[0]
         pkind = self.gb.parse_pkind(pkind)
+        print(pkind)
         phone = self.gb.get_phone_by_pkind(pkind)
         phone_info = self.gb.parse_phone(phone)
         print(phone_info)
