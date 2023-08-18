@@ -2,7 +2,7 @@
 # @Author: longfengpili
 # @Date:   2023-08-11 18:03:23
 # @Last Modified by:   longfengpili
-# @Last Modified time: 2023-08-18 12:02:03
+# @Last Modified time: 2023-08-18 19:07:19
 # @github: https://github.com/longfengpili
 
 import pytest
@@ -55,7 +55,7 @@ class TestKimovil:
         print(phone_info)
 
     def test_get_phones(self):
-        phones = ['vivo 1906', 'CPH2083', '2206122SC']
+        # phones = ['vivo 1906', 'CPH2083', '2206122SC']
         phones = ['samsung SM-A025F', '2206122SC']
         for idx, pname in enumerate(phones):
             phone_info = self.km.get_phone(idx, pname)

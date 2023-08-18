@@ -2,16 +2,19 @@
 # @Author: longfengpili
 # @Date:   2023-08-14 11:22:47
 # @Last Modified by:   longfengpili
-# @Last Modified time: 2023-08-18 11:56:50
+# @Last Modified time: 2023-08-18 19:06:05
 # @github: https://github.com/longfengpili
 
+
+import time
+from lxml import etree
 import cloudscraper
 from lxml.etree import Element as elem
 
 from .base import PhoneBase
 
 import logging
-glogger = logging.getLogger(__name__)
+klogger = logging.getLogger(__name__)
 
 
 class Kimovil(PhoneBase):
@@ -31,21 +34,26 @@ class Kimovil(PhoneBase):
         base_url = 'https://www.kimovil.com/en/compare-smartphones'
         return base_url
 
-    @property
-    def scraper(self):
-        scraper = cloudscraper.create_scraper()
-        return scraper
-
-    def base_request(self, url: str):
+    def base_request(self, url: str, try_times: int = 4):
         # print(url)
         status_code = 200
-        res = self.scraper.get(url)
+        scraper = cloudscraper.create_scraper()
+        res = scraper.get(url)
+        res_text = res.text
+        noresult = 'Just a moment'
+        while noresult in res_text and try_times > 0:
+            klogger.warning(f'{url},  Error: {noresult} !')
+            res = scraper.get(url)
+            res_text = res.text
+            try_times -= 1
+            time.sleep(1)
+
         return res, status_code
 
     def request(self, pname: str = None, page: int = None):
         param = f'name.{pname}' if pname else f'page.{page}'
         url = f"{self.base_url}/{param}"
-        res, _ = self.base_request(url)
+        res, status_code = self.base_request(url)
         return url, res
         
     def parse_phone(self, phone: elem):
@@ -59,7 +67,11 @@ class Kimovil(PhoneBase):
         )
 
         phone_xpath = './/ul[@class="kiui-grid k-main k-auto-column device-mini-datasheet device-mini-datasheet-sheet"]'
-        phone = self.get_elem(phone, phone_xpath)[0]
+        try:
+            phone = self.get_elem(phone, phone_xpath)[0]
+        except:
+            print(etree.tostring(phone))
+            raise
         phone_info = self.get_elem_mpath(phone, *mpaths)
 
         return phone_info
