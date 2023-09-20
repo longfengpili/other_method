@@ -1,3 +1,6 @@
 [submodule "pandas"]
 	path = pandas
 	url = https://github.com/longfengpili/pandas.git
+[submodule "workscripts"]
+	path = workscripts
+	url = git@github.com:longfengpili/workscripts.git
