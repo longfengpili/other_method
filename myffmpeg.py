@@ -2,7 +2,7 @@
 # @Author: longfengpili
 # @Date:   2024-08-23 10:51:34
 # @Last Modified by:   longfengpili
-# @Last Modified time: 2024-09-01 11:08:45
+# @Last Modified time: 2024-09-01 13:40:25
 # @github: https://github.com/longfengpili
 
 from pathlib import Path
@@ -27,11 +27,14 @@ def convert_video(file: Path, target_path: str = None, r: int = 60):
     target_path = target_path or f'{file.drive}/'
     tpath = Path(target_path) / 'new_video'
     tfile = tpath / f'new_{file.name}'
-    tfile = tfile.as_posix()
 
     if not tpath.exists():
         tpath.mkdir(parents=True)
 
+    if tfile.exists():
+        return
+
+    tfile = tfile.as_posix()
     ffmpeg.input(file).output(tfile, r=r).run()
 
 
@@ -40,4 +43,3 @@ if __name__ == '__main__':
     for file in files:
         logger.info(file)
         convert_video(file)
-        break
