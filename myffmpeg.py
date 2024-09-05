@@ -2,12 +2,17 @@
 # @Author: longfengpili
 # @Date:   2024-08-23 10:51:34
 # @Last Modified by:   longfengpili
-# @Last Modified time: 2024-08-23 10:51:52
+# @Last Modified time: 2024-09-01 13:40:25
 # @github: https://github.com/longfengpili
 
 from pathlib import Path
 
+from pydbapi.conf import LOGGING_CONFIG
 import ffmpeg
+
+import logging
+logging.config.dictConfig(LOGGING_CONFIG)
+logger = logging.getLogger(__name__)
 
 
 def get_files(path: str = None):
@@ -26,10 +31,15 @@ def convert_video(file: Path, target_path: str = None, r: int = 60):
     if not tpath.exists():
         tpath.mkdir(parents=True)
 
-    ffmpeg.input(file).output(tfile, r=r)
+    if tfile.exists():
+        return
+
+    tfile = tfile.as_posix()
+    ffmpeg.input(file).output(tfile, r=r).run()
 
 
 if __name__ == '__main__':
     files = get_files()
     for file in files:
+        logger.info(file)
         convert_video(file)
