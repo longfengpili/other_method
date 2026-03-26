@@ -1,16 +1,25 @@
+from .flac_base import FlacBase
+from .flac_info import FlacInfo
+from .flac_cover import FlacCover
+
+
+
 from pathlib import Path
 from mutagen.id3 import ID3, TALB, COMM, TPE1, Encoding
 from mutagen.wave import WAVE
 from mutagen.mp3 import MP3
 from mutagen.flac import FLAC
 from pydub import AudioSegment
+from typing import Union, List, Tuple, Optional
 import logging
 
 from pydbapi.conf import LOGGING_CONFIG
 logging.config.dictConfig(LOGGING_CONFIG)
 
+# 类型别名
+PathLike = Union[str, Path]
 
-def convert_to_flac(input_path: str, output_path: str = None, remove_original: bool = False) -> str:
+def convert_to_flac(input_path: PathLike, output_path: PathLike = None, remove_original: bool = False) -> str:
     """
     将音频文件转换为 FLAC 格式
     Args:
@@ -66,54 +75,11 @@ def convert_to_flac(input_path: str, output_path: str = None, remove_original: b
         logging.debug(f"转换成功flac: {output_path}")
 
         # 可选：删除原文件
-        if remove_original:
+        if remove_original and fsuffix != '.flac':
             file.unlink()
             logging.warning(f"删除原文件: {input_path}")
 
         return output_path
-
     except Exception as e:
         logging.error(f"转换失败: {input_path} -> 错误: {e}")
         return None
-
-def modify_flac(filepath: str, regexp: str = None, album: str = None):
-    # r"(?P<title>.+)-(?P<artist>.+)-(?P<album>.+)"
-    file = Path(filepath)
-    name = file.stem
-    logging.info(f'{name} modify starting ~')
-    audio = FLAC(file)
-    audio.delete()
-
-    if regexp:
-        result = re.match(regexp, name)
-        if not result:
-            raise ValueError(f'{name} not match regexp')
-        for k, v in result.groupdict().items():
-            audio[k.strip()] = v.strip()
-
-    if album:
-        audio['album'] = album
-    audio.save()
-
-    logging.info(f'{name} modify completed ~')
-
-def modify_audios(filedir: str, regexp: str = None, album: str = None):
-    files = Path(filedir).glob('*')
-    files = list(files)
-    for file in files:
-        name = file.name
-        if name.endswith('mp3'):
-            file = convert_to_flac(file, remove_original=True)
-        elif name.endswith('wav'):
-            file = convert_to_flac(file, remove_original=True)
-        elif name.endswith('.flac'):
-            pass
-        else:
-            continue
-
-        modify_flac(file, regexp, album)
-
-
-
-if __name__ == '__main__':
-    modify_audios(r'E:/music/QQ音乐 华语经典.九十年代盛行歌曲.甄选423首', r'(?P<artist>.+)-(?P<title>.+)', '90年代盛行歌曲423首')
